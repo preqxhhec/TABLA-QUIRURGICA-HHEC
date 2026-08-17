@@ -1,0 +1,616 @@
+
+
+// =============================================================
+// 📖 MANUAL DE USUARIO - EBOOK
+// =============================================================
+function cargarManual() {
+    const indiceLista = document.getElementById('manualIndiceLista');
+    const contenidoInner = document.getElementById('manualContenidoInner');
+
+    // Definir secciones del manual
+    const secciones = [
+        { id: 'introduccion', titulo: '1. Introducción', icono: '📋' },
+        { id: 'acceso', titulo: '2. Acceso al Sistema', icono: '🔐' },
+        { id: 'panel-principal', titulo: '3. Panel Principal - Tabla Quirúrgica', icono: '📊' },
+        { id: 'columnas', titulo: '3.1 Columnas de la Tabla', icono: '📋' },
+        { id: 'estados', titulo: '3.2 Estados de ESTADO_DE_IQx', icono: '📊' },
+        { id: 'botones', titulo: '3.3 Botones de Acción', icono: '🔘' },
+        { id: 'diferidos', titulo: '4. Pacientes Diferidos', icono: '📤' },
+        { id: 'libro', titulo: '5. Libro de Quirófano', icono: '📘' },
+        { id: 'admin', titulo: '6. Panel de Administración', icono: '⚙️' },
+        { id: 'avanzadas', titulo: '7. Funciones Avanzadas', icono: '🚀' },
+        { id: 'problemas', titulo: '8. Solución de Problemas', icono: '🔧' },
+        { id: 'faq', titulo: '9. Preguntas Frecuentes', icono: '❓' }
+    ];
+
+    // Generar índice
+    let indiceHTML = '';
+    secciones.forEach(sec => {
+        indiceHTML += `
+            <div class="manual-indice-item" data-seccion="${sec.id}" style="padding:10px 20px; cursor:pointer; border-left:3px solid transparent; transition:all 0.2s; font-size:0.85rem; color:#475569; display:flex; align-items:center; gap:10px;">
+                <span>${sec.icono}</span>
+                <span>${sec.titulo}</span>
+            </div>
+        `;
+    });
+    indiceLista.innerHTML = indiceHTML;
+
+    // Eventos de clic en el índice
+    document.querySelectorAll('.manual-indice-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const seccionId = this.dataset.seccion;
+            // Resaltar elemento seleccionado
+            document.querySelectorAll('.manual-indice-item').forEach(el => {
+                el.style.background = 'transparent';
+                el.style.borderLeftColor = 'transparent';
+                el.style.fontWeight = '400';
+            });
+            this.style.background = '#e8f4fd';
+            this.style.borderLeftColor = '#0b2a4f';
+            this.style.fontWeight = '600';
+            // Cargar contenido
+            cargarContenidoManual(seccionId);
+        });
+    });
+
+    // Seleccionar primera sección por defecto
+    const primerItem = document.querySelector('.manual-indice-item');
+    if (primerItem) {
+        primerItem.click();
+    }
+}
+
+// =============================================================
+// 📖 CARGAR CONTENIDO DEL MANUAL
+// =============================================================
+function cargarContenidoManual(seccionId) {
+    const contenidoInner = document.getElementById('manualContenidoInner');
+    
+    const contenidos = {
+        'introduccion': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📋 Manual de Usuario - Tabla Quirúrgica</h1>
+            <p style="font-size:1.1rem; color:#475569; margin-bottom:24px;">Hospital Dr. Humberto Elorza Cortés · Illapel, Chile</p>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">1.1 ¿Qué es la Tabla Quirúrgica?</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">La Tabla Quirúrgica es un sistema de registro digital diseñado para el Hospital Dr. Humberto Elorza Cortés. Permite:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>📝 Registrar pacientes quirúrgicos por día y pabellón</li>
+                <li>📤 Diferir pacientes a una lista de espera</li>
+                <li>📘 Generar el Libro de Quirófano (registro definitivo)</li>
+                <li>🔄 Sincronizar datos en tiempo real entre múltiples usuarios</li>
+                <li>⚙️ Administrar usuarios y opciones de desplegables</li>
+            </ul>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">1.2 Beneficios</h2>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>✅ <strong>Sin pérdida de datos</strong>: Guardado automático cada 10 minutos</li>
+                <li>✅ <strong>Sincronización en tiempo real</strong>: Todos los usuarios ven los mismos datos</li>
+                <li>✅ <strong>Rápido y eficiente</strong>: Optimizado para funcionar sin demoras</li>
+                <li>✅ <strong>Acceso seguro</strong>: Autenticación con usuario y contraseña</li>
+                <li>✅ <strong>Roles diferenciados</strong>: Administradores y usuarios</li>
+            </ul>
+        `,
+        
+        'acceso': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🔐 Acceso al Sistema</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">2.1 Pantalla de Login</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Para acceder al sistema:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>Correo electrónico</strong>: Ingresa tu correo institucional</li>
+                <li><strong>Contraseña</strong>: Ingresa tu contraseña asignada</li>
+                <li>Haz clic en <strong>"Ingresar"</strong> o presiona <strong>Enter</strong></li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">2.2 Mensajes de Error</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Mensaje</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Significado</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Solución</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">❌ Usuario no encontrado</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">El correo no está registrado</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Contacta al administrador</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">❌ Contraseña incorrecta</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">La contraseña no coincide</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Verifica que la contraseña sea correcta</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">❌ Demasiados intentos</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Se superó el límite de intentos</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Espera unos minutos e intenta nuevamente</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">2.3 Cerrar Sesión</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>"🚪 Cerrar Sesión"</strong> en la esquina superior derecha</li>
+                <li>Confirma la acción en el mensaje de advertencia</li>
+            </ol>
+        `,
+        
+        'panel-principal': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📊 Panel Principal - Tabla Quirúrgica</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.1 Estructura General</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">La pantalla principal tiene las siguientes secciones:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>🏥 Header</strong>: Logo y título de la aplicación</li>
+                <li><strong>🍔 Menú</strong>: Navegación entre secciones y semanas</li>
+                <li><strong>📅 Días</strong>: Selección del día de la semana (LUN-DOM)</li>
+                <li><strong>📋 Tabla</strong>: Registro de pacientes quirúrgicos</li>
+                <li><strong>🔘 Botones de acción</strong>: Guardar, limpiar, agregar filas</li>
+            </ul>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.2 Cabecera</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Elemento</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Función</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">🍔 Menú</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Navegación entre secciones</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;"><strong>Semana 1-5</strong></td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Seleccionar la semana de trabajo</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">👤 Usuario</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Muestra tu correo y botón de cierre de sesión</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.3 Días de la Semana</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Haz clic en un día para ver los registros de ese día:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>LUN</strong> - Lunes</li>
+                <li><strong>MAR</strong> - Martes</li>
+                <li><strong>MIE</strong> - Miércoles</li>
+                <li><strong>JUE</strong> - Jueves</li>
+                <li><strong>VIE</strong> - Viernes</li>
+                <li><strong>SAB</strong> - Sábado</li>
+                <li><strong>DOM</strong> - Domingo</li>
+            </ul>
+            <p style="color:#64748b; font-style:italic; margin-top:8px;">💡 El día activo se muestra con fondo oscuro</p>
+        `,
+        
+        'columnas': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📋 Columnas de la Tabla</h1>
+            
+            <table style="width:100%; border-collapse:collapse; font-size:0.8rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:6px 10px; text-align:left; border:1px solid #e2e8f0;">Columna</th>
+                        <th style="padding:6px 10px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                        <th style="padding:6px 10px; text-align:left; border:1px solid #e2e8f0;">Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;">🎨 Color</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Marcar fila con color</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Selector de color</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;">⏩ Diferir</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Enviar paciente a lista de espera</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Botón</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;">🔄 Reubicar</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Mover paciente a otra fila</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Botón</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>FECHA</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Fecha de la cirugía</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Date Picker</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>T_Qx</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tiempo quirúrgico programado</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Jornada</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">AM o PM</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Cirujano</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Nombre del cirujano</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Especialidad</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Especialidad médica</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Anestesista</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Nombre del anestesista</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Nombre_Paciente</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Nombre completo del paciente</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>RUT</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">RUT del paciente</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto (con validación)</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Edad</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Edad del paciente</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>FICHA</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Número de ficha</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Diagnostico</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Diagnóstico del paciente</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Intervencion_propuesta</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Cirugía programada</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Combobox con búsqueda</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Condicion_LE</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Condición de lista de espera</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Texto</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>ESTADO_DE_IQx</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Estado de la intervención</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>1ra_Intervencion_Qx_Realizada</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Primera cirugía realizada</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Combobox</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Tipo_Actividad</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tipo de actividad (Cmay/Cmen/Proc)</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Auto-completado</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>2da_Intervencion_Qx_Realizada</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Segunda cirugía realizada</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Combobox</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Tipo_Actividad_2</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tipo de actividad 2</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Auto-completado</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>3ra_Intervencion_Realizada</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tercera cirugía realizada</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Combobox</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Tipo_Actividad_3</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tipo de actividad 3</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Auto-completado</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Causal_de_suspension</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Motivo de suspensión</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Motivo</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Detalle del motivo</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select (dependiente)</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Observaciones</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Notas adicionales</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Textarea</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>T_Retraso</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tiempo de retraso</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Hora_de_entrada</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora de entrada a pabellón</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>Hora_de_salida</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora de salida de pabellón</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Hora</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>T_QX</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Tiempo quirúrgico real</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Auto-calculado</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;"><strong>DESTINO</strong></td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Destino del paciente</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Select</td></tr>
+                    <tr><td style="padding:6px 10px; border:1px solid #e2e8f0;">🗑️ Eliminar</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Eliminar la fila</td><td style="padding:6px 10px; border:1px solid #e2e8f0;">Botón</td></tr>
+                </tbody>
+            </table>
+        `,
+        
+        'estados': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📊 Estados de ESTADO_DE_IQx</h1>
+            
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Opción</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (PROGRAMADO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía programada realizada</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (AGREGADO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía agregada realizada</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (CONDICIONAL)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía condicional realizada</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (PAD)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía PAD realizada</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;"><strong>SUSPENDIDO</strong></td><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;">⚠️ Cirugía suspendida (bloquea el botón Diferir)</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">URGENCIA</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía de urgencia</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">CONDICIONAL (NO OPERADO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Condicional no operado</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">PERIANALGESIA (PARTO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Parto con analgesia</td></tr>
+                </tbody>
+            </table>
+            <p style="color:#dc2626; font-weight:500; margin-top:8px;">⚠️ <strong>Importante:</strong> Cuando un paciente está SUSPENDIDO, el botón Diferir se deshabilita automáticamente.</p>
+        `,
+        
+        'botones': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🔘 Botones de Acción</h1>
+            
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Botón</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Función</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Visual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">💾 Guardar Día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Guarda todas las filas del día en Firebase</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Verde</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">💾 Guardar Pabellón</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Guarda solo el pabellón actual</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Verde</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">📋 Registrar Día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Archiva el día en el Libro de Quirófano <strong>(solo admin)</strong></td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Morado</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🗑️ Limpiar Día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina todos los datos del día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Rojo</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🗑️ Limpiar Pabellón</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina datos del pabellón actual</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Rojo</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">➕ Agregar Fila</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Agrega una fila nueva</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Azul</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🗑️ Eliminar Fila</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina la fila seleccionada</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Rojo</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🖨️ Imprimir Día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Imprime el resumen del día</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Azul oscuro</td></tr>
+                </tbody>
+            </table>
+        `,
+        
+        'diferidos': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📤 Pacientes Diferidos</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">4.1 ¿Qué son los Pacientes Diferidos?</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Son pacientes que han sido <strong>diferidos</strong> (movidos) desde la tabla principal a una lista de espera. Esto puede ocurrir cuando:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>El paciente no se presenta</li>
+                <li>Falta de disponibilidad de quirófano</li>
+                <li>El paciente rechaza la operación</li>
+                <li>Otras causales administrativas o médicas</li>
+            </ul>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">4.2 Acceso a la Sección</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en el menú 🍔 (hamburguesa)</li>
+                <li>Selecciona <strong>"📤 Pacientes Diferidos"</strong></li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">4.3 Funcionalidades</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Acción</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">↩️ Reintegrar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Devuelve el paciente a la tabla principal</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🗑️ Eliminar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina el registro de diferidos (permanentemente)</td></tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">4.4 Reintegrar un Paciente</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>↩️</strong> (Reintegrar) en el paciente deseado</li>
+                <li>Selecciona: <strong>Semana</strong>, <strong>Día</strong>, <strong>Pabellón</strong> y <strong>Fila</strong></li>
+                <li>Haz clic en <strong>"✅ Reintegrar"</strong></li>
+                <li>El paciente aparecerá en la tabla seleccionada</li>
+            </ol>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Si la fila destino tiene datos, se te preguntará si deseas sobrescribir</p>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">4.5 Eliminar un Paciente Diferido</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>🗑️</strong> (Eliminar) en el paciente deseado</li>
+                <li>Confirma la acción en el mensaje de advertencia</li>
+            </ol>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Esta acción es permanente y no se puede deshacer</p>
+        `,
+        
+        'libro': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📘 Libro de Quirófano</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">5.1 ¿Qué es el Libro de Quirófano?</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Es el <strong>registro definitivo</strong> de todas las cirugías realizadas. Una vez que los datos se archivan aquí:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>✅ Quedan registrados permanentemente</li>
+                <li>✅ No se pueden modificar (solo administradores pueden editar)</li>
+                <li>✅ Se pueden filtrar y exportar a Excel</li>
+            </ul>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">5.2 Acceso a la Sección</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en el menú 🍔 (hamburguesa)</li>
+                <li>Selecciona <strong>"📘 Libro de Quirófano"</strong></li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">5.3 Filtros Disponibles</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Filtro</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">📅 Rango de Fechas</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por período de tiempo</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🏥 Pabellón</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por pabellón</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Jornada</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por AM/PM</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Especialidad</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por especialidad</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">ESTADO DE IQx</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por estado</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirujano</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por cirujano</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Nombre Paciente</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por nombre</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">RUT</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por RUT</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Intervención</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Filtra por intervención realizada</td></tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">5.4 Acciones</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Acción</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">👁️ Ver Detalle</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Muestra todos los datos del registro</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">📊 Exportar a Excel</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Descarga los datos filtrados en formato Excel</td></tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">5.5 Ver Detalle de un Registro</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>👁️</strong> (Ver Detalle)</li>
+                <li>Se abrirá un modal con todos los datos del registro</li>
+                <li>También verás información de registro (quién y cuándo)</li>
+            </ol>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;"><strong>Si eres administrador</strong>, también puedes:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>✏️ <strong>Editar</strong> el registro</li>
+                <li>🗑️ <strong>Eliminar</strong> el registro</li>
+            </ul>
+        `,
+        
+        'admin': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">⚙️ Panel de Administración</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.1 Acceso</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en el menú 🍔 (hamburguesa)</li>
+                <li>Selecciona <strong>"⚙️ Administrador"</strong></li>
+            </ol>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Esta sección solo está disponible para usuarios con rol <strong>Administrador</strong></p>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.2 Gestión de Usuarios</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Acción</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Crear Usuario</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Agrega un nuevo usuario al sistema</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambiar Rol</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Asigna rol (Usuario / Administrador)</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquear/Activar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquea o activa el acceso de un usuario</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Eliminar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina un usuario del sistema</td></tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.3 Crear Usuario</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>"+ Crear Usuario"</strong></li>
+                <li>Completa los campos: <strong>Correo electrónico</strong>, <strong>Contraseña</strong> y <strong>Rol</strong></li>
+                <li>Haz clic en <strong>"✅ Crear"</strong></li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.4 Gestión de Desplegables</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Puedes gestionar las opciones de los siguientes desplegables:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>Jornada</strong>: Opciones AM / PM</li>
+                <li><strong>ESTADO DE IQx</strong>: Estados de intervención</li>
+                <li><strong>DESTINO</strong>: Destinos del paciente</li>
+                <li><strong>Especialidad</strong>: Especialidades médicas</li>
+            </ul>
+            <p style="color:#475569; line-height:1.7; margin-bottom:8px;"><strong>Agregar una opción:</strong></p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
+                <li>Escribe la nueva opción en el campo</li>
+                <li>Haz clic en <strong>"+"</strong></li>
+            </ol>
+            <p style="color:#475569; line-height:1.7; margin-bottom:8px;"><strong>Eliminar una opción:</strong></p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
+                <li>Haz clic en <strong>"✕"</strong> junto a la opción que deseas eliminar</li>
+            </ol>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Eliminar una opción puede afectar registros existentes</p>
+        `,
+        
+        'avanzadas': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🚀 Funciones Avanzadas</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.1 Guardado Automático</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El sistema guarda automáticamente los datos de dos maneras:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>Debounce (30 segundos)</strong>: Después de 30 segundos sin escribir, se guarda automáticamente</li>
+                <li><strong>Intervalo (10 minutos)</strong>: Cada 10 minutos se guarda automáticamente</li>
+            </ol>
+            <p style="color:#64748b; font-style:italic;">💡 Puedes ver los guardados automáticos en la consola del navegador (F12)</p>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.2 Color de Filas</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Puedes marcar filas con colores para organizar visualmente:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en el círculo 🎨 de la fila</li>
+                <li>Selecciona un color de la paleta</li>
+                <li>La fila se resaltará con ese color</li>
+            </ol>
+            <p style="color:#64748b; font-style:italic;">💡 Útil para marcar urgencias o casos especiales</p>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.3 Validación de RUT</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El sistema valida automáticamente el RUT mientras escribes:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>✅ <strong>Verde</strong>: RUT válido</li>
+                <li>❌ <strong>Rojo</strong>: RUT inválido</li>
+            </ul>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.4 Búsqueda de Intervenciones</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El campo de intervención tiene un buscador integrado:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Escribe parte del nombre de la intervención</li>
+                <li>Aparecerán sugerencias</li>
+                <li>Selecciona la intervención deseada</li>
+                <li>El campo <strong>Tipo_Actividad</strong> se llenará automáticamente</li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.5 Cálculo Automático de T_QX</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El tiempo quirúrgico real se calcula automáticamente:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Ingresa <strong>Hora_de_entrada</strong></li>
+                <li>Ingresa <strong>Hora_de_salida</strong></li>
+                <li>El campo <strong>T_QX</strong> se actualiza automáticamente</li>
+            </ol>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.6 Impresión de Día</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>"🖨️ Imprimir Día"</strong></li>
+                <li>Se abrirá una ventana con el resumen del día</li>
+                <li>Puedes imprimir o guardar como PDF</li>
+            </ol>
+        `,
+        
+        'problemas': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🔧 Solución de Problemas</h1>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.1 Problemas Comunes</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Problema</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Posible Causa</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Solución</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">No puedo iniciar sesión</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Contraseña incorrecta</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Contacta al administrador</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Los datos no se guardan</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Sin conexión a Internet</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Verifica tu conexión</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Error de permisos</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Rol insuficiente</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Contacta al administrador</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">La tabla no carga</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Error de sincronización</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Recarga la página (F5)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">El botón Diferir está deshabilitado</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Paciente SUSPENDIDO</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambia el estado para habilitarlo</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.2 Verificar Conexión a Firebase</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Abre la consola (F12) y escribe:</p>
+            <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
+database.ref('.info/connected').on('value', function(snap) {
+    console.log(snap.val() ? '✅ Conectado a Firebase' : '❌ Sin conexión');
+});</pre>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.3 Forzar Sincronización</h2>
+            <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
+cargarDatosDesdeFirebase();</pre>
+            
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.4 Recargar Datos</h2>
+            <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
+location.reload();</pre>
+        `,
+        
+        'faq': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">❓ Preguntas Frecuentes</h1>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Cómo sé que mis datos se guardaron correctamente?</h3>
+                <p style="color:#475569; line-height:1.7;">Verás un mensaje en la parte inferior o un modal de confirmación. También puedes verificar en la consola (F12) el mensaje <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">✅ X filas guardadas</code></p>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Qué hago si cierro la página sin guardar?</h3>
+                <p style="color:#475569; line-height:1.7;">El sistema tiene guardado automático cada 30 segundos, por lo que la mayoría de los datos ya estarán guardados.</p>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Cómo recupero un dato eliminado?</h3>
+                <p style="color:#475569; line-height:1.7;">Los datos eliminados no se pueden recuperar. Sin embargo, si estaban en el Libro de Quirófano, permanecen allí.</p>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Qué significa "SUSPENDIDO" en ESTADO_DE_IQx?</h3>
+                <p style="color:#475569; line-height:1.7;">Un paciente SUSPENDIDO es aquel cuya cirugía fue suspendida. Características:</p>
+                <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
+                    <li>El botón Diferir está deshabilitado</li>
+                    <li>Si se reubica, la fila original NO se elimina</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Puedo acceder desde mi celular?</h3>
+                <p style="color:#475569; line-height:1.7;">Sí, la aplicación es responsive y funciona en dispositivos móviles.</p>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Los datos se sincronizan en tiempo real?</h3>
+                <p style="color:#475569; line-height:1.7;">Sí, todos los usuarios conectados ven los mismos datos en tiempo real.</p>
+            </div>
+        `
+    };
+
+    // Obtener el contenido de la sección seleccionada
+    const contenido = contenidos[seccionId] || `
+        <p style="color:#94a3b8; text-align:center; padding:60px 20px; font-size:1.1rem;">
+            Contenido no disponible
+        </p>
+    `;
+
+    contenidoInner.innerHTML = contenido;
+
+    // Scroll al inicio del contenido
+    const contenedor = document.getElementById('manualContenido');
+    if (contenedor) {
+        contenedor.scrollTop = 0;
+    }
+}
