@@ -335,3 +335,17 @@
         cambiarSeccion('manual');
     });
 }
+
+    // "Reunión de Tabla" no cambia de sección: abre un modal para elegir
+    // semanas (Tabla Quirúrgica) y rango de fechas (Estadísticas) y generar
+    // con eso una Presentación/PPT combinada (ver js/21-reunion-tabla.js).
+    const navReunionTabla = document.getElementById('navReunionTabla');
+    if (navReunionTabla) {
+        navReunionTabla.addEventListener('click', function() {
+            if (menuDropdown && menuToggle) {
+                menuDropdown.classList.remove('open');
+                menuToggle.classList.remove('active');
+            }
+            abrirModalReunionTabla();
+        });
+    }

@@ -39,17 +39,25 @@ function aplicarPermisosNavegacion() {
         registro: 'navRegistro', diferidos: 'navDiferidos', libro: 'navLibro',
         estadisticas: 'navEstadisticas', manual: 'navManual'
     };
+    const navReunionTabla = document.getElementById('navReunionTabla');
     if (esAdministrador()) {
         Object.values(botonesPorSeccion).forEach(id => {
             const btn = document.getElementById(id);
             if (btn) btn.style.display = '';
         });
+        if (navReunionTabla) navReunionTabla.style.display = '';
         return;
     }
     SECCIONES_APP.forEach(sec => {
         const btn = document.getElementById(botonesPorSeccion[sec.key]);
         if (btn) btn.style.display = usuarioTieneAccesoSeccion(sec.key) ? '' : 'none';
     });
+    // "Reunión de Tabla" combina Tabla Quirúrgica + Estadísticas: solo tiene
+    // sentido mostrarla si el usuario tiene acceso a ambas secciones.
+    if (navReunionTabla) {
+        const accesoReunion = usuarioTieneAccesoSeccion('registro') && usuarioTieneAccesoSeccion('estadisticas');
+        navReunionTabla.style.display = accesoReunion ? '' : 'none';
+    }
 }
 
 function mostrarSinAccesoSecciones() {

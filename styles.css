@@ -359,7 +359,12 @@ td.col-intervencion textarea.intervencion-textarea:focus {
 /* ============================================ */
 /* OTRAS CELDAS                                  */
 /* ============================================ */
-td:not(.col-intervencion) {
+/* Escapado a .table-wrap (Tabla Quirúrgica / Libro de Quirófano / Diferidos /
+   Admin Usuarios) para que NO afecte las tablas de Estadísticas
+   (.stats-table-wrap) ni las láminas de Presentación/PPT (construidas fuera
+   de .table-wrap) — ahí el texto largo debe poder envolver para que el alto
+   de la fila se adapte al contenido en vez de recortarse/desbordarse. */
+.table-wrap td:not(.col-intervencion) {
     width: 0.1% !important;
     white-space: nowrap !important;
 }
@@ -1460,6 +1465,14 @@ body.pptx-modo-captura #estadisticasAmbDesgloseWrap {
 body.pptx-modo-captura #estadisticasTablaCausalesContainer th:last-child,
 body.pptx-modo-captura #estadisticasTablaCausalesContainer td:last-child {
     display: none !important;
+}
+/* La tabla de Causales tiene scroll interno (max-height:380px) para la vista
+   normal, pero html2canvas solo fotografía lo visible: sin esto, las filas
+   fuera del área visible quedaban recortadas en la lámina/PPT. Durante la
+   captura se muestra completa, sin scroll ni límite de alto. */
+body.pptx-modo-captura .stats-table-wrap {
+    max-height: none !important;
+    overflow: visible !important;
 }
 /* Producción por Especialidad / Desglose Ambulatorio: en la captura se
    muestran solo los gráficos (sin la tabla mensual de cada especialidad),
