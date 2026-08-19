@@ -933,8 +933,10 @@
                         ${generarContenidoVista()}
                     </div>
                     <div class="modal-actions" id="detalleLibroActions">
+                        ${esAdministrador() ? `
                         <button class="modal-btn modal-btn-success" id="editarRegistroBtn">✏️ Editar</button>
                         <button class="modal-btn modal-btn-danger" id="eliminarRegistroBtn" style="background:#dc2626; color:white; box-shadow:0 4px 12px rgba(220,38,38,0.35);">🗑️ Eliminar</button>
+                        ` : ''}
                         <button class="modal-btn modal-btn-cancel" id="cerrarDetalleLibro">✅ Cerrar</button>
                     </div>
                 </div>
@@ -1187,7 +1189,7 @@
                 });
             }
 
-            editarBtn.addEventListener('click', async function() {
+            if (editarBtn) editarBtn.addEventListener('click', async function() {
                 if (modoEdicion) {
                     const camposEditados = contentDiv.querySelectorAll('.edit-field');
                     const datosActualizados = {};
@@ -1257,7 +1259,7 @@
                 }
             });
 
-            eliminarBtn.addEventListener('click', async function() {
+            if (eliminarBtn) eliminarBtn.addEventListener('click', async function() {
                 if (modoEdicion) {
                     modoEdicion = false;
                     await actualizarContenido();

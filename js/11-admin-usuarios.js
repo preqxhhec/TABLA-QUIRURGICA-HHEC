@@ -3,6 +3,8 @@
     // =============================================================
     // 👥 GESTIÓN DE USUARIOS
     // =============================================================
+    let usuariosCache = {};
+
     async function cargarUsuarios() {
         const contenedor = document.getElementById('usuariosLista');
         if (!contenedor) return;
@@ -26,11 +28,14 @@
                                 <th style="padding:8px 10px; text-align:left; border-bottom:2px solid #e2e8f0;">Email</th>
                                 <th style="padding:8px 10px; text-align:center; border-bottom:2px solid #e2e8f0;">Rol</th>
                                 <th style="padding:8px 10px; text-align:center; border-bottom:2px solid #e2e8f0;">Estado</th>
+                                <th style="padding:8px 10px; text-align:center; border-bottom:2px solid #e2e8f0;">Permisos</th>
                                 <th style="padding:8px 10px; text-align:center; border-bottom:2px solid #e2e8f0;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
             `;
+
+            usuariosCache = data;
 
             Object.keys(data).forEach(uid => {
                 const user = data[uid];
@@ -60,7 +65,13 @@
                             }
                         </td>
                         <td style="padding:8px 10px; text-align:center;">
-                            ${esUsuarioActual ? 
+                            ${rol === 'administrador' ?
+                                '<span style="color:#94a3b8; font-size:0.7rem;">Acceso total</span>' :
+                                `<button class="btn-editar-permisos" data-uid="${uid}" style="background:transparent; border:1px solid #1a6d8a; border-radius:4px; padding:2px 10px; cursor:pointer; color:#1a6d8a; font-size:0.75rem;">🔐 Permisos</button>`
+                            }
+                        </td>
+                        <td style="padding:8px 10px; text-align:center;">
+                            ${esUsuarioActual ?
                                 '<span style="color:#94a3b8; font-size:0.7rem;">No puedes modificarte</span>' :
                                 `<button class="btn-eliminar-usuario" data-uid="${uid}" data-email="${email}" style="background:transparent; border:1px solid #ef4444; border-radius:4px; padding:2px 8px; cursor:pointer; color:#ef4444; font-size:0.8rem;">🗑️</button>`
                             }
@@ -98,6 +109,14 @@
                     const uid = this.dataset.uid;
                     const email = this.dataset.email;
                     eliminarUsuario(uid, email);
+                });
+            });
+
+            document.querySelectorAll('.btn-editar-permisos').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const uid = this.dataset.uid;
+                    const user = usuariosCache[uid] || {};
+                    mostrarModalEditarPermisos(uid, user.email || 'Sin email', user.secciones, !!user.soloLecturaTabla);
                 });
             });
 
@@ -250,7 +269,11 @@
                         <option value="usuario">Usuario</option>
                         <option value="administrador">Administrador</option>
                     </select>
-                    
+
+                    <div id="nuevoUsuarioPermisosWrap">
+                        ${renderCheckboxesPermisos(null, false)}
+                    </div>
+
                     <div id="nuevoUsuarioError" style="color:#dc2626; font-size:0.85rem; margin-top:8px; min-height:20px;"></div>
                 </div>
                 <div class="modal-actions">
@@ -268,6 +291,13 @@
         const errorDiv = overlay.querySelector('#nuevoUsuarioError');
         const confirmarBtn = overlay.querySelector('#crearUsuarioConfirmar');
         const cancelarBtn = overlay.querySelector('#crearUsuarioCancelar');
+        const permisosWrap = overlay.querySelector('#nuevoUsuarioPermisosWrap');
+
+        function actualizarVisibilidadPermisos() {
+            permisosWrap.style.display = rolSelect.value === 'administrador' ? 'none' : 'block';
+        }
+        actualizarVisibilidadPermisos();
+        rolSelect.addEventListener('change', actualizarVisibilidadPermisos);
 
         confirmarBtn.addEventListener('click', async function() {
             const email = emailInput.value.trim();
@@ -290,13 +320,21 @@
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                await database.ref('usuarios/' + user.uid).set({
+                const datosUsuario = {
                     email: email,
                     rol: rol,
                     activo: true,
                     creado_por: currentUserEmail,
                     fecha_creacion: firebase.database.ServerValue.TIMESTAMP
-                });
+                };
+
+                if (rol === 'usuario') {
+                    const permisos = leerPermisosDesdeFormulario();
+                    datosUsuario.secciones = permisos.secciones;
+                    datosUsuario.soloLecturaTabla = permisos.soloLecturaTabla;
+                }
+
+                await database.ref('usuarios/' + user.uid).set(datosUsuario);
 
                 showModal({
                     title: '✅ Usuario creado',
@@ -341,5 +379,76 @@
                 overlay.classList.add('closing');
                 setTimeout(() => overlay.remove(), 300);
             }
+        });
+    }
+
+    // =============================================================
+    // 🔐 EDITAR PERMISOS DE UN USUARIO EXISTENTE
+    // =============================================================
+    function mostrarModalEditarPermisos(uid, email, seccionesActuales, soloLecturaActual) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box" style="max-width: 450px;">
+                <span class="modal-icon">🔐</span>
+                <div class="modal-title">Permisos de ${email}</div>
+                <div style="text-align:left; margin-bottom:16px;">
+                    ${renderCheckboxesPermisos(seccionesActuales, soloLecturaActual)}
+                    <div id="editarPermisosError" style="color:#dc2626; font-size:0.85rem; margin-top:8px; min-height:20px;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="editarPermisosCancelar">Cancelar</button>
+                    <button class="modal-btn modal-btn-success" id="editarPermisosConfirmar">💾 Guardar</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        function cerrar() {
+            const box = overlay.querySelector('.modal-box');
+            box.classList.add('closing');
+            overlay.classList.add('closing');
+            setTimeout(() => overlay.remove(), 300);
+        }
+
+        overlay.querySelector('#editarPermisosConfirmar').addEventListener('click', async function() {
+            const errorDiv = overlay.querySelector('#editarPermisosError');
+            const btn = this;
+            btn.disabled = true;
+            errorDiv.textContent = '⏳ Guardando...';
+
+            try {
+                const { secciones, soloLecturaTabla } = leerPermisosDesdeFormulario();
+                await guardarPermisosUsuario(uid, secciones, soloLecturaTabla);
+                cerrar();
+                cargarUsuarios();
+            } catch (error) {
+                console.error('❌ Error al guardar permisos:', error);
+                errorDiv.textContent = '❌ Hubo un problema al guardar. Intenta nuevamente.';
+                btn.disabled = false;
+            }
+        });
+
+        overlay.querySelector('#editarPermisosCancelar').addEventListener('click', cerrar);
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) cerrar();
+        });
+    }
+
+    async function guardarPermisosUsuario(uid, secciones, soloLecturaTabla) {
+        if (!currentUser || currentUserRol !== 'administrador') {
+            showModal({
+                title: '⛔ Acceso denegado',
+                message: 'Solo los administradores pueden editar permisos.',
+                icon: '⛔',
+                confirmText: 'Aceptar'
+            });
+            return;
+        }
+
+        await database.ref('usuarios/' + uid).update({
+            secciones: secciones,
+            soloLecturaTabla: soloLecturaTabla
         });
     }

@@ -146,6 +146,9 @@ async function renderWeekView(esAutoSave = false) {
     // 🎥 Toolbar de Presentación / Descargar PPT (una lámina por día)
     inicializarToolbarPresentacionTabla();
 
+    // 🔒 Si el usuario está en modo solo lectura, deshabilita toda edición
+    aplicarSoloLecturaTabla();
+
     // ✅ EVENTOS DELEGADOS
     asignarEventosDelegados();
 

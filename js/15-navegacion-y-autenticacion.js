@@ -8,6 +8,16 @@
             return;
         }
 
+        if (!usuarioTieneAccesoSeccion(seccion)) {
+            showModal({
+                title: '⛔ Acceso denegado',
+                message: 'No tienes permiso para acceder a esta sección.<br>Contacta al administrador si crees que esto es un error.',
+                icon: '⛔',
+                confirmText: 'Aceptar'
+            });
+            return;
+        }
+
         weekContent.style.display = 'none';
         diferidosContent.style.display = 'none';
         libroContent.style.display = 'none';
@@ -228,6 +238,12 @@
                 await userRef.update({ rol: 'usuario', email: currentUserEmail });
             }
 
+            // secciones === null (campo nunca definido) se interpreta como
+            // "sin restricción" para no bloquear retroactivamente a usuarios
+            // creados antes de que existiera este sistema de permisos.
+            currentUserSecciones = (userData && userData.secciones) || null;
+            currentUserSoloLecturaTabla = !!(userData && userData.soloLecturaTabla);
+
             console.log('✅ Usuario autenticado:', currentUserEmail, 'Rol:', currentUserRol);
 
             loginContainer.style.display = 'none';
@@ -243,12 +259,23 @@
             await cargarDesplegablesCache();
             iniciarSincronizacionTiempoReal();
             iniciarAutoSave();
-            render();
+
+            aplicarPermisosNavegacion();
+            const seccionInicial = obtenerPrimeraSeccionAccesible();
+            if (!seccionInicial) {
+                mostrarSinAccesoSecciones();
+            } else if (seccionInicial !== 'registro') {
+                cambiarSeccion(seccionInicial);
+            } else {
+                render();
+            }
 
         } else {
             currentUser = null;
             currentUserEmail = '';
             currentUserRol = '';
+            currentUserSecciones = null;
+            currentUserSoloLecturaTabla = false;
             loginContainer.style.display = 'flex';
             appContainer.style.display = 'none';
             appContainer.classList.remove('visible');
