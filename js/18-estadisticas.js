@@ -139,6 +139,73 @@ const ESTADISTICAS_REDIBUJAR_POR_PAGINA = {
     7: renderEstadisticasMetas
 };
 
+// -------------------------------------------------------------
+// 🧩 PAGINACIÓN de las láminas "grilla por especialidad" (Producción por
+// Especialidad y Desglose Ambulatorio): en vez de apretar todas las
+// especialidades en una sola lámina, se muestran de a
+// ESTADISTICAS_ESPECIALIDADES_POR_LAMINA (2 columnas x 2 filas) usando el
+// máximo espacio de la lámina — si hay más, se generan láminas adicionales
+// automáticamente. Mapea elementoId -> id del grid con las tarjetas.
+// -------------------------------------------------------------
+const ESTADISTICAS_LAMINAS_PAGINABLES_POR_ESPECIALIDAD = {
+    estadisticasPagina_2: 'estadisticasProdEspGrid',
+    estadisticasAmbDesgloseWrap: 'estadisticasAmbGrid'
+};
+// 2 por lámina (una al lado de la otra) para que cada gráfico quede tan
+// grande como cuando queda uno solo en la lámina — antes eran 4 (2x2) y se
+// veían chicos comparados con una lámina de una sola especialidad.
+const ESTADISTICAS_ESPECIALIDADES_POR_LAMINA = 2;
+
+// Oculta todas las tarjetas del grid salvo las que pertenecen al chunk
+// indicado (chunkIndex, 0-based), para que html2canvas capture solo esas.
+function estadisticasAplicarChunkGrid(gridId, chunkIndex, chunkSize) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    Array.from(grid.children).forEach((child, idx) => {
+        child.style.display = (Math.floor(idx / chunkSize) === chunkIndex) ? '' : 'none';
+    });
+}
+
+function estadisticasRestaurarChunkGrid(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    Array.from(grid.children).forEach(child => { child.style.display = ''; });
+}
+
+// Expande ESTADISTICAS_LAMINAS: las láminas paginables se convierten en N
+// láminas según cuántas tarjetas de especialidad haya REALMENTE en este
+// momento (según año/filtro seleccionado), en vez de una sola lámina fija.
+// Debe llamarse antes de iniciar una tanda de capturas (Presentación o PPT).
+function estadisticasResolverLaminas() {
+    const resultado = [];
+    ESTADISTICAS_LAMINAS.forEach(l => {
+        const gridId = ESTADISTICAS_LAMINAS_PAGINABLES_POR_ESPECIALIDAD[l.elementoId];
+        if (!gridId) {
+            resultado.push({ ...l, gridId: null, chunkIndex: null });
+            return;
+        }
+
+        const paginaAnterior = estadisticasPaginaActual;
+        mostrarPaginaEstadisticas(l.pagina);
+        const redibujar = ESTADISTICAS_REDIBUJAR_POR_PAGINA[l.pagina];
+        if (redibujar) redibujar();
+        const grid = document.getElementById(gridId);
+        const total = grid ? grid.children.length : 0;
+        mostrarPaginaEstadisticas(paginaAnterior);
+
+        const numLaminas = Math.max(1, Math.ceil(total / ESTADISTICAS_ESPECIALIDADES_POR_LAMINA));
+        for (let i = 0; i < numLaminas; i++) {
+            resultado.push({
+                ...l,
+                titulo: numLaminas > 1 ? `${l.titulo} (${i + 1}/${numLaminas})` : l.titulo,
+                gridId,
+                chunkIndex: i
+            });
+        }
+    });
+    return resultado;
+}
+
 let estadisticasPaginaActual = 0;
 let estadisticasCapturasCache = {}; // { elementoId(+variante): { dataUrl, width, height } }
 let estadisticasPresentandoIndice = 0;
@@ -2897,10 +2964,14 @@ function encolarCaptura(tarea) {
 // opciones.modoCaptura: agrega temporalmente la clase 'pptx-modo-captura'
 // a <body> (ver styles.css) para usar un layout más ancho/compacto solo
 // en la captura, sin afectar la vista interactiva normal.
+// opciones.gridId + opciones.chunkIndex: para láminas paginadas por
+// especialidad (ver estadisticasResolverLaminas) — oculta todas las
+// tarjetas del grid salvo las del chunk indicado antes de capturar.
 async function capturarElementoComoImagen(paginaIndice, elementoId, opciones = {}) {
     // El layout puede cambiar según modoCaptura (grillas más anchas, secciones
-    // ocultas), así que cada variante necesita su propia entrada de caché.
-    const claveCache = elementoId + (opciones.modoCaptura ? '__captura' : '');
+    // ocultas) y según qué chunk de especialidades esté visible, así que cada
+    // variante necesita su propia entrada de caché.
+    const claveCache = elementoId + (opciones.modoCaptura ? '__captura' : '') + (opciones.gridId && opciones.chunkIndex != null ? `__chunk${opciones.chunkIndex}` : '');
 
     if (estadisticasCapturasCache[claveCache]) return estadisticasCapturasCache[claveCache];
 
@@ -2934,6 +3005,11 @@ async function capturarElementoComoImagen(paginaIndice, elementoId, opciones = {
             await new Promise(resolve => setTimeout(resolve, 30));
         }
 
+        if (opciones.gridId && opciones.chunkIndex != null) {
+            estadisticasAplicarChunkGrid(opciones.gridId, opciones.chunkIndex, ESTADISTICAS_ESPECIALIDADES_POR_LAMINA);
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
+
         let captura;
         try {
             const elemento = document.getElementById(elementoId);
@@ -2945,6 +3021,7 @@ async function capturarElementoComoImagen(paginaIndice, elementoId, opciones = {
                 height: canvas.height
             };
         } finally {
+            if (opciones.gridId && opciones.chunkIndex != null) estadisticasRestaurarChunkGrid(opciones.gridId);
             if (opciones.modoCaptura) document.body.classList.remove('pptx-modo-captura');
             mostrarPaginaEstadisticas(paginaAnterior);
         }
@@ -2976,6 +3053,8 @@ function ajustarImagenAlaCaja(anchoPx, altoPx, cajaX, cajaY, cajaW, cajaH) {
 // =============================================================
 // 🎥 MODO PRESENTACIÓN (pantalla completa)
 // =============================================================
+let estadisticasLaminasResueltas = ESTADISTICAS_LAMINAS;
+
 function abrirPresentacionEstadisticas() {
     document.getElementById('estadisticasPresentacionOverlay')?.remove();
 
@@ -2984,11 +3063,21 @@ function abrirPresentacionEstadisticas() {
     overlay.style.cssText = 'position:fixed; inset:0; background:#0b2a4f; z-index:5000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; box-sizing:border-box;';
     document.body.appendChild(overlay);
 
+    // Fuerza a releer el filtro de fecha (y demás filtros) actuales de la
+    // pantalla: sin esto, una lámina ya capturada antes con un filtro
+    // distinto podía quedar cacheada y reaparecer "pegada" aunque el
+    // usuario ya haya cambiado el rango de fechas.
+    estadisticasCapturasCache = {};
+
+    // Resuelve las láminas paginables (Producción/Ambulatorio por
+    // especialidad) según los datos actuales, antes de empezar a navegar.
+    estadisticasLaminasResueltas = estadisticasResolverLaminas();
+
     // Arranca en la lámina que corresponda a la página donde estaba el
-    // usuario (puede no ser 1 a 1 — algunas páginas se dividen en 2 láminas
-    // o no tienen lámina, como Tiempos por Intervención); si no hay
+    // usuario (puede no ser 1 a 1 — algunas páginas se dividen en varias
+    // láminas o no tienen lámina, como Tiempos por Intervención); si no hay
     // coincidencia, arranca desde el principio.
-    const laminaCoincidente = ESTADISTICAS_LAMINAS.findIndex(l => l.pagina === estadisticasPaginaActual);
+    const laminaCoincidente = estadisticasLaminasResueltas.findIndex(l => l.pagina === estadisticasPaginaActual);
     estadisticasPresentandoIndice = laminaCoincidente >= 0 ? laminaCoincidente : 0;
 
     estadisticasManejadorTecladoPresentacion = function(e) {
@@ -3004,8 +3093,8 @@ function abrirPresentacionEstadisticas() {
 async function mostrarDiapositivaPresentacion(indice) {
     const overlay = document.getElementById('estadisticasPresentacionOverlay');
     if (!overlay) return;
-    estadisticasPresentandoIndice = Math.max(0, Math.min(indice, ESTADISTICAS_LAMINAS.length - 1));
-    const lamina = ESTADISTICAS_LAMINAS[estadisticasPresentandoIndice];
+    estadisticasPresentandoIndice = Math.max(0, Math.min(indice, estadisticasLaminasResueltas.length - 1));
+    const lamina = estadisticasLaminasResueltas[estadisticasPresentandoIndice];
 
     // Token de la solicitud vigente: si el usuario navega de nuevo antes de
     // que esta captura termine, la resolución de ESTA llamada debe ignorarse
@@ -3018,7 +3107,7 @@ async function mostrarDiapositivaPresentacion(indice) {
 
     let captura;
     try {
-        captura = await capturarElementoComoImagen(lamina.pagina, lamina.elementoId, { modoCaptura: laminaNecesitaModoCaptura(lamina) });
+        captura = await capturarElementoComoImagen(lamina.pagina, lamina.elementoId, { modoCaptura: laminaNecesitaModoCaptura(lamina), gridId: lamina.gridId, chunkIndex: lamina.chunkIndex });
     } catch (error) {
         console.error('❌ Error al generar diapositiva:', error);
         if (solicitudId !== estadisticasPresentacionSolicitudId) return;
@@ -3048,7 +3137,7 @@ async function mostrarDiapositivaPresentacion(indice) {
         </div>
         <div style="margin-top:16px; display:flex; align-items:center; gap:20px;">
             <button id="estadisticasPresentacionAnterior" style="background:white; color:#0b2a4f; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:1.1rem; font-weight:700;">‹</button>
-            <span style="color:white; font-size:0.85rem;">${estadisticasPresentandoIndice + 1} / ${ESTADISTICAS_LAMINAS.length}</span>
+            <span style="color:white; font-size:0.85rem;">${estadisticasPresentandoIndice + 1} / ${estadisticasLaminasResueltas.length}</span>
             <button id="estadisticasPresentacionSiguiente" style="background:white; color:#0b2a4f; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:1.1rem; font-weight:700;">›</button>
         </div>
     `;
@@ -3061,7 +3150,7 @@ async function mostrarDiapositivaPresentacion(indice) {
 
 function cambiarDiapositivaPresentacion(delta) {
     const nuevoIndice = estadisticasPresentandoIndice + delta;
-    if (nuevoIndice < 0 || nuevoIndice >= ESTADISTICAS_LAMINAS.length) return;
+    if (nuevoIndice < 0 || nuevoIndice >= estadisticasLaminasResueltas.length) return;
     mostrarDiapositivaPresentacion(nuevoIndice);
 }
 
@@ -3088,14 +3177,19 @@ async function descargarPresentacionPpt() {
             throw new Error('PptxGenJS no está disponible');
         }
 
+        // Misma razón que en abrirPresentacionEstadisticas(): evita que una
+        // lámina cacheada con un filtro de fecha anterior se cuele en el PPT.
+        estadisticasCapturasCache = {};
+
         const pptx = new PptxGenJS();
         pptx.defineLayout({ name: 'ESTADISTICAS', width: 13.33, height: 7.5 });
         pptx.layout = 'ESTADISTICAS';
 
         const logoDataUrl = await obtenerLogoDataUrl();
 
-        for (const item of ESTADISTICAS_LAMINAS) {
-            const captura = await capturarElementoComoImagen(item.pagina, item.elementoId, { modoCaptura: laminaNecesitaModoCaptura(item) });
+        const laminas = estadisticasResolverLaminas();
+        for (const item of laminas) {
+            const captura = await capturarElementoComoImagen(item.pagina, item.elementoId, { modoCaptura: laminaNecesitaModoCaptura(item), gridId: item.gridId, chunkIndex: item.chunkIndex });
 
             const slide = pptx.addSlide();
             slide.addText(item.titulo, {

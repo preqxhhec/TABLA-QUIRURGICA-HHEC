@@ -349,3 +349,16 @@
             abrirModalReunionTabla();
         });
     }
+
+    // "Análisis IA" tampoco cambia de sección: abre un modal para elegir
+    // qué datos incluir y arma un informe ejecutivo (ver js/22-analisis-ia.js).
+    const navAnalisisIA = document.getElementById('navAnalisisIA');
+    if (navAnalisisIA) {
+        navAnalisisIA.addEventListener('click', function() {
+            if (menuDropdown && menuToggle) {
+                menuDropdown.classList.remove('open');
+                menuToggle.classList.remove('active');
+            }
+            abrirModalAnalisisIA();
+        });
+    }

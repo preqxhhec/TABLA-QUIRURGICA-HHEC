@@ -40,24 +40,25 @@ function aplicarPermisosNavegacion() {
         estadisticas: 'navEstadisticas', manual: 'navManual'
     };
     const navReunionTabla = document.getElementById('navReunionTabla');
+    const navAnalisisIA = document.getElementById('navAnalisisIA');
     if (esAdministrador()) {
         Object.values(botonesPorSeccion).forEach(id => {
             const btn = document.getElementById(id);
             if (btn) btn.style.display = '';
         });
         if (navReunionTabla) navReunionTabla.style.display = '';
+        if (navAnalisisIA) navAnalisisIA.style.display = '';
         return;
     }
     SECCIONES_APP.forEach(sec => {
         const btn = document.getElementById(botonesPorSeccion[sec.key]);
         if (btn) btn.style.display = usuarioTieneAccesoSeccion(sec.key) ? '' : 'none';
     });
-    // "Reunión de Tabla" combina Tabla Quirúrgica + Estadísticas: solo tiene
-    // sentido mostrarla si el usuario tiene acceso a ambas secciones.
-    if (navReunionTabla) {
-        const accesoReunion = usuarioTieneAccesoSeccion('registro') && usuarioTieneAccesoSeccion('estadisticas');
-        navReunionTabla.style.display = accesoReunion ? '' : 'none';
-    }
+    // "Reunión de Tabla" y "Análisis IA" combinan Tabla Quirúrgica +
+    // Estadísticas: solo tienen sentido si el usuario tiene acceso a ambas.
+    const accesoCombinado = usuarioTieneAccesoSeccion('registro') && usuarioTieneAccesoSeccion('estadisticas');
+    if (navReunionTabla) navReunionTabla.style.display = accesoCombinado ? '' : 'none';
+    if (navAnalisisIA) navAnalisisIA.style.display = accesoCombinado ? '' : 'none';
 }
 
 function mostrarSinAccesoSecciones() {

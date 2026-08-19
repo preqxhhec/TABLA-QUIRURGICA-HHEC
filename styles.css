@@ -1442,9 +1442,13 @@ td.col-reubicar {
 /* Layout más ancho/compacto aplicado solo mientras html2canvas   */
 /* fotografía la página — no afecta la vista interactiva normal.  */
 /* ============================================ */
+/* Como máximo 4 tarjetas por lámina (2 columnas x 2 filas) — las demás
+   quedan ocultas por JS (ver estadisticasAplicarChunkGrid en js/18) y se
+   capturan en láminas adicionales, en vez de apretar todas las
+   especialidades en una sola imagen. */
 body.pptx-modo-captura #estadisticasProdEspGrid,
 body.pptx-modo-captura #estadisticasAmbGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 body.pptx-modo-captura #estadisticasMetasGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -1481,7 +1485,10 @@ body.pptx-modo-captura #estadisticasProdEspGrid .stats-tabla-especialidad,
 body.pptx-modo-captura #estadisticasAmbGrid .stats-tabla-especialidad {
     display: none !important;
 }
+/* Con como máximo 2 tarjetas por lámina (una sola fila, una al lado de la
+   otra), cada gráfico puede ser bien grande y ocupar casi toda la altura
+   de la diapositiva. */
 body.pptx-modo-captura #estadisticasProdEspGrid .stats-grafico-especialidad,
 body.pptx-modo-captura #estadisticasAmbGrid .stats-grafico-especialidad {
-    height: 460px !important;
+    height: 950px !important;
 }

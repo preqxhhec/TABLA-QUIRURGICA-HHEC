@@ -154,8 +154,9 @@ async function iniciarReunionTabla(modo) {
     tablaPresentacionCache = {}; // fuerza a releer semanas/días actuales, igual que abrirPresentacionTabla()/descargarPptTabla()
     const laminasTabla = obtenerLaminasTablaSeleccionadas().map(l => ({ ...l, origen: 'tabla' }));
 
-    // --- Estadísticas: reusa ESTADISTICAS_LAMINAS y capturarElementoComoImagen()
-    // (js/18), solo reemplazando temporalmente el filtro de fecha general.
+    // --- Estadísticas: reusa estadisticasResolverLaminas() y
+    // capturarElementoComoImagen() (js/18), solo reemplazando temporalmente
+    // el filtro de fecha general.
     if (!estadisticasRegistros || estadisticasRegistros.length === 0) {
         await cargarEstadisticas();
     }
@@ -171,7 +172,7 @@ async function iniciarReunionTabla(modo) {
     estadisticasContent.style.display = 'block';
     renderEstadisticas();
 
-    const laminasEstadisticas = ESTADISTICAS_LAMINAS.map(l => ({ ...l, origen: 'estadisticas' }));
+    const laminasEstadisticas = estadisticasResolverLaminas().map(l => ({ ...l, origen: 'estadisticas' }));
     const laminas = [...laminasTabla, ...laminasEstadisticas];
 
     function restaurarEstado() {
@@ -189,7 +190,7 @@ async function iniciarReunionTabla(modo) {
             const l = laminas[i];
             const captura = l.origen === 'tabla'
                 ? await capturarLaminaDiaTabla(l.semanaIdx, l.diaIdx)
-                : await capturarElementoComoImagen(l.pagina, l.elementoId, { modoCaptura: laminaNecesitaModoCaptura(l) });
+                : await capturarElementoComoImagen(l.pagina, l.elementoId, { modoCaptura: laminaNecesitaModoCaptura(l), gridId: l.gridId, chunkIndex: l.chunkIndex });
             capturas.push({ titulo: l.titulo, dataUrl: captura.dataUrl, width: captura.width, height: captura.height });
         }
     } catch (error) {
