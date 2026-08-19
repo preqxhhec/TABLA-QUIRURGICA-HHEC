@@ -1,0 +1,7 @@
+# Datos reales de pacientes / exportes generados — NUNCA deben subirse a un repo público
+*.pptx
+*.pbix
+*.xlsx
+
+# Configuración local de Claude Code (no es parte del proyecto)
+.claude/
