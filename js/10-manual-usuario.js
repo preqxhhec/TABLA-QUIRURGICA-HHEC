@@ -15,12 +15,14 @@ function cargarManual() {
         { id: 'columnas', titulo: '3.1 Columnas de la Tabla', icono: '📋' },
         { id: 'estados', titulo: '3.2 Estados de ESTADO_DE_IQx', icono: '📊' },
         { id: 'botones', titulo: '3.3 Botones de Acción', icono: '🔘' },
+        { id: 'presentacion-tabla', titulo: '3.4 Presentación y Descargar PPT', icono: '🎥' },
         { id: 'diferidos', titulo: '4. Pacientes Diferidos', icono: '📤' },
         { id: 'libro', titulo: '5. Libro de Quirófano', icono: '📘' },
-        { id: 'admin', titulo: '6. Panel de Administración', icono: '⚙️' },
-        { id: 'avanzadas', titulo: '7. Funciones Avanzadas', icono: '🚀' },
-        { id: 'problemas', titulo: '8. Solución de Problemas', icono: '🔧' },
-        { id: 'faq', titulo: '9. Preguntas Frecuentes', icono: '❓' }
+        { id: 'estadisticas-manual', titulo: '6. Estadísticas', icono: '📊' },
+        { id: 'admin', titulo: '7. Panel de Administración', icono: '⚙️' },
+        { id: 'avanzadas', titulo: '8. Funciones Avanzadas', icono: '🚀' },
+        { id: 'problemas', titulo: '9. Solución de Problemas', icono: '🔧' },
+        { id: 'faq', titulo: '10. Preguntas Frecuentes', icono: '❓' }
     ];
 
     // Generar índice
@@ -283,7 +285,34 @@ function cargarContenidoManual(seccionId) {
                 </tbody>
             </table>
         `,
-        
+
+        'presentacion-tabla': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🎥 Presentación y Descargar PPT</h1>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">En la parte superior de cada semana (justo debajo de "📅 Semana X") hay una barra con tres controles para generar una presentación de la tabla, una lámina por cada día:</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.4.1 Elegir Semanas</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>"📅 Semanas (N) ▾"</strong></li>
+                <li>Marca las semanas que quieres incluir (por ejemplo, solo la Semana 1, o la 1 y la 2 juntas)</li>
+                <li>Usa <strong>"Todas"</strong> para seleccionarlas/deseleccionarlas todas de una vez</li>
+            </ol>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.4.2 Presentación en Pantalla Completa</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Haz clic en <strong>"🎥 Presentación"</strong></li>
+                <li>Se genera una lámina por cada día (Lunes a Domingo) de cada semana elegida, con Pabellón 1 y Pabellón 2 por separado</li>
+                <li>Navega con las flechas <strong>← →</strong> del teclado o los botones <strong>‹ ›</strong></li>
+                <li>Cierra con <strong>Esc</strong> o el botón "✕ Cerrar"</li>
+            </ol>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.4.3 Descargar PPT</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El botón <strong>"⬇️ Descargar PPT"</strong> genera un archivo <strong>.pptx</strong> con esas mismas láminas (una diapositiva por día), listo para compartir o proyectar fuera de la app.</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">3.4.4 Columnas que Muestra</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Cada lámina usa las mismas columnas que <strong>🖨️ Imprimir Día</strong>, sin la columna FICHA: #, Fecha, Especialidad, Nombre Paciente, RUT, Edad, Diagnóstico, Intervención Propuesta y Condición LE. Si un pabellón no tiene registros ese día, se indica "No hay registros en este pabellón".</p>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Si tu cuenta está en modo <strong>solo lectura</strong> (ver sección 7), estos tres botones no aparecen.</p>
+        `,
+
         'diferidos': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📤 Pacientes Diferidos</h1>
             
@@ -396,19 +425,58 @@ function cargarContenidoManual(seccionId) {
                 <li>✏️ <strong>Editar</strong> el registro</li>
                 <li>🗑️ <strong>Eliminar</strong> el registro</li>
             </ul>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Los botones Editar y Eliminar solo se muestran a administradores; el resto de los usuarios solo ve "✅ Cerrar".</p>
         `,
-        
+
+        'estadisticas-manual': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📊 Estadísticas</h1>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Se accede desde el menú 🍔 → <strong>"📊 Estadísticas"</strong>. Toma los datos del Libro de Quirófano (registro definitivo) y los organiza en 8 páginas navegables, con un selector de página en la parte inferior.</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.1 Las 8 Páginas</h2>
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Página</th>
+                        <th style="padding:8px 12px; text-align:left; border:1px solid #e2e8f0;">Contenido</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Programación / Suspensiones</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">KPIs generales, tabla de causales de suspensión (con filtros por columna) y gráficos por especialidad</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">REM (Cmay)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Producción por especialidad quirúrgica, en intervenciones y en pacientes</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Comportamiento de Producción por Especialidad</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Evolución mensual de cada especialidad (Cmay), en gráfico y tabla</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Proceso Ambulatorio</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Índice de ambulatorización general, ranking por especialidad y desglose mensual</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Ocupación y Rendimiento Pabellón</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Días hábiles, horas habilitadas/trabajadas/urgencia, gauges de ocupación y rendimiento, horario inhábil</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Tiempos por Intervención</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Buscador de intervenciones con duración promedio, mínima, máxima y número de casos</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Perianalgesia (Parto)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Casos por mes en el año, con calendario detallado al hacer clic en un mes</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cumplimiento de Metas</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Metas de producción (general/Cmay, por intervenciones y por pacientes) y % de ambulatorización, con gauges de avance</td></tr>
+                </tbody>
+            </table>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.2 Filtro de Fecha</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Hay un filtro de fecha global (arriba de todo) que afecta a la mayoría de las páginas. Las páginas basadas en comportamiento anual — Comportamiento por Especialidad, Desglose del Proceso Ambulatorio, Perianalgesia y Cumplimiento de Metas — usan en cambio su propio selector de <strong>Año</strong>, independiente del filtro de fecha global.</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.3 Presentación y Descargar PPT</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">En la barra de navegación de páginas (abajo) están los botones <strong>"🎥 Presentación"</strong> y <strong>"⬇️ Descargar PPT"</strong>, que generan las 9 láminas de Estadísticas (una página se divide en dos láminas) en pantalla completa o como archivo .pptx descargable — misma lógica que la Presentación de la Tabla Quirúrgica (sección 3.4).</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.4 Parámetros Editables Solo por Administrador</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Algunos valores de Estadísticas solo pueden verse o modificarse siendo administrador:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>La <strong>disponibilidad de pabellón</strong> (horario habilitado por bloque) en Ocupación y Rendimiento Pabellón</li>
+                <li>Las <strong>metas de producción</strong> y de ambulatorización en Cumplimiento de Metas</li>
+            </ul>
+        `,
+
         'admin': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">⚙️ Panel de Administración</h1>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.1 Acceso</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.1 Acceso</h2>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Haz clic en el menú 🍔 (hamburguesa)</li>
                 <li>Selecciona <strong>"⚙️ Administrador"</strong></li>
             </ol>
             <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Esta sección solo está disponible para usuarios con rol <strong>Administrador</strong></p>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.2 Gestión de Usuarios</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.2 Gestión de Usuarios</h2>
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
                 <thead>
                     <tr style="background:#f1f5f9;">
@@ -420,18 +488,29 @@ function cargarContenidoManual(seccionId) {
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Crear Usuario</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Agrega un nuevo usuario al sistema</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambiar Rol</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Asigna rol (Usuario / Administrador)</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquear/Activar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquea o activa el acceso de un usuario</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🔐 Permisos</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Edita las secciones a las que accede un usuario y el modo solo lectura (ver 7.4)</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Eliminar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina un usuario del sistema</td></tr>
                 </tbody>
             </table>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.3 Crear Usuario</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.3 Crear Usuario</h2>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Haz clic en <strong>"+ Crear Usuario"</strong></li>
                 <li>Completa los campos: <strong>Correo electrónico</strong>, <strong>Contraseña</strong> y <strong>Rol</strong></li>
+                <li>Si el rol es <strong>Usuario</strong>, marca las secciones a las que podrá acceder y, si corresponde, el modo solo lectura (ver 7.4). Si el rol es <strong>Administrador</strong>, estas opciones no aparecen porque el acceso ya es total</li>
                 <li>Haz clic en <strong>"✅ Crear"</strong></li>
             </ol>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.4 Gestión de Desplegables</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.4 Permisos de Usuario</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Los administradores siempre tienen acceso completo a toda la aplicación — esto no se puede restringir. Para usuarios con rol <strong>Usuario</strong> se puede configurar, al crearlos o después desde el botón <strong>"🔐 Permisos"</strong> en la lista de usuarios:</p>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:12px;">
+                <li><strong>Secciones accesibles</strong>: Tabla Quirúrgica, Pacientes Diferidos, Libro de Quirófano, Estadísticas y Manual de Usuario. Las secciones no marcadas desaparecen del menú de ese usuario; si intenta entrar igual, se le deniega el acceso</li>
+                <li><strong>Solo lectura en Tabla Quirúrgica</strong>: el usuario puede navegar semanas y días e Imprimir Día, pero no puede editar campos, agregar/eliminar filas, guardar, limpiar, registrar día, diferir, reubicar, cambiar colores, ni usar Presentación/Descargar PPT de esa sección</li>
+            </ul>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Los permisos se pueden editar todas las veces que sea necesario, y los cambios se aplican la próxima vez que ese usuario inicie sesión (o al recargar la página si ya la tiene abierta).</p>
+            <p style="color:#64748b; font-style:italic; margin-top:8px;">💡 Un usuario creado antes de que existiera este sistema de permisos conserva acceso total mientras no se le configure ninguna restricción explícita.</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.5 Gestión de Desplegables</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Puedes gestionar las opciones de los siguientes desplegables:</p>
             <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li><strong>Jornada</strong>: Opciones AM / PM</li>
@@ -454,7 +533,7 @@ function cargarContenidoManual(seccionId) {
         'avanzadas': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🚀 Funciones Avanzadas</h1>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.1 Guardado Automático</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.1 Guardado Automático</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El sistema guarda automáticamente los datos de dos maneras:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li><strong>Debounce (30 segundos)</strong>: Después de 30 segundos sin escribir, se guarda automáticamente</li>
@@ -462,7 +541,7 @@ function cargarContenidoManual(seccionId) {
             </ol>
             <p style="color:#64748b; font-style:italic;">💡 Puedes ver los guardados automáticos en la consola del navegador (F12)</p>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.2 Color de Filas</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.2 Color de Filas</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Puedes marcar filas con colores para organizar visualmente:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Haz clic en el círculo 🎨 de la fila</li>
@@ -471,14 +550,14 @@ function cargarContenidoManual(seccionId) {
             </ol>
             <p style="color:#64748b; font-style:italic;">💡 Útil para marcar urgencias o casos especiales</p>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.3 Validación de RUT</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.3 Validación de RUT</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El sistema valida automáticamente el RUT mientras escribes:</p>
             <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>✅ <strong>Verde</strong>: RUT válido</li>
                 <li>❌ <strong>Rojo</strong>: RUT inválido</li>
             </ul>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.4 Búsqueda de Intervenciones</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.4 Búsqueda de Intervenciones</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El campo de intervención tiene un buscador integrado:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Escribe parte del nombre de la intervención</li>
@@ -487,7 +566,7 @@ function cargarContenidoManual(seccionId) {
                 <li>El campo <strong>Tipo_Actividad</strong> se llenará automáticamente</li>
             </ol>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.5 Cálculo Automático de T_QX</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.5 Cálculo Automático de T_QX</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El tiempo quirúrgico real se calcula automáticamente:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Ingresa <strong>Hora_de_entrada</strong></li>
@@ -495,7 +574,7 @@ function cargarContenidoManual(seccionId) {
                 <li>El campo <strong>T_QX</strong> se actualiza automáticamente</li>
             </ol>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.6 Impresión de Día</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.6 Impresión de Día</h2>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Haz clic en <strong>"🖨️ Imprimir Día"</strong></li>
                 <li>Se abrirá una ventana con el resumen del día</li>
@@ -506,7 +585,7 @@ function cargarContenidoManual(seccionId) {
         'problemas': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🔧 Solución de Problemas</h1>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.1 Problemas Comunes</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">9.1 Problemas Comunes</h2>
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
                 <thead>
                     <tr style="background:#f1f5f9;">
@@ -541,21 +620,31 @@ function cargarContenidoManual(seccionId) {
                         <td style="padding:8px 12px; border:1px solid #e2e8f0;">Paciente SUSPENDIDO</td>
                         <td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambia el estado para habilitarlo</td>
                     </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">No veo una sección en el menú (Estadísticas, Libro, etc.)</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Tu cuenta no tiene permiso para esa sección</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Pide al administrador que te dé acceso desde "🔐 Permisos" (sección 7.4)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">No puedo editar ni guardar nada en Tabla Quirúrgica</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Tu cuenta está en modo solo lectura</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Es el comportamiento esperado; solo un administrador puede desactivarlo</td>
+                    </tr>
                 </tbody>
             </table>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.2 Verificar Conexión a Firebase</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">9.2 Verificar Conexión a Firebase</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Abre la consola (F12) y escribe:</p>
             <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
 database.ref('.info/connected').on('value', function(snap) {
     console.log(snap.val() ? '✅ Conectado a Firebase' : '❌ Sin conexión');
 });</pre>
             
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.3 Forzar Sincronización</h2>
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">9.3 Forzar Sincronización</h2>
             <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
 cargarDatosDesdeFirebase();</pre>
-            
-            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.4 Recargar Datos</h2>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">9.4 Recargar Datos</h2>
             <pre style="background:#1e293b; color:#e2e8f0; padding:12px 16px; border-radius:8px; overflow-x:auto; font-size:0.85rem; margin-bottom:16px;">
 location.reload();</pre>
         `,
@@ -595,6 +684,16 @@ location.reload();</pre>
             <div style="margin-bottom:20px;">
                 <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Los datos se sincronizan en tiempo real?</h3>
                 <p style="color:#475569; line-height:1.7;">Sí, todos los usuarios conectados ven los mismos datos en tiempo real.</p>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Puedo restringir a qué secciones accede un usuario?</h3>
+                <p style="color:#475569; line-height:1.7;">Sí, si eres administrador. Al crear un usuario (o después, desde "🔐 Permisos" en la lista de usuarios) puedes elegir exactamente qué secciones puede ver. Ver sección 7.4.</p>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Qué es el modo "solo lectura" en Tabla Quirúrgica?</h3>
+                <p style="color:#475569; line-height:1.7;">Un usuario en ese modo puede navegar semanas y días, e Imprimir Día, pero no puede editar, guardar, agregar/eliminar filas ni usar ninguna otra función de esa sección. Lo activa un administrador desde "🔐 Permisos". Ver sección 7.4.</p>
             </div>
         `
     };
