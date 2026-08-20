@@ -177,6 +177,14 @@ function obtenerOpcionesCache(key) {
         return;
     }
 
+    // 📅 FECHA obligatoria: un registro definitivo (archivado permanente) no
+    // puede quedar sin fecha.
+    const faltantes = obtenerFilasSinFechaObligatoria(filasConDatos.map(item => item.data));
+    if (faltantes.length > 0) {
+        mostrarAlertaFechaFaltante(faltantes.length);
+        return;
+    }
+
     const confirmed = await showModal({
         title: '📋 Registrar Día Definitivamente',
         message: `¿Estás seguro de registrar definitivamente el día <strong>${diaNombre}</strong>?<br><br>` +

@@ -19,7 +19,12 @@
 // =============================================================
 // 💾 GUARDAR DÍA OPTIMIZADO (UNA SOLA LLAMADA A FIREBASE)
 // =============================================================
-async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = true) {
+// alertarFechaFaltante: además de mostrarModal (guardado manual, que SIEMPRE
+// bloquea con alerta), el autoguardado periódico de 10 minutos también debe
+// avisar — a diferencia del autoguardado por inactividad (60s después de
+// cada cambio), que se queda en silencio para no interrumpir mientras el
+// usuario está recién tipeando. Ver iniciarAutoSave() / triggerAutoSave().
+async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = true, alertarFechaFaltante = false) {
     if (!currentUser) {
         console.warn('⚠️ No hay usuario autenticado');
         return;
@@ -37,6 +42,24 @@ async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = tru
         return;
     }
 
+    // 📅 FECHA obligatoria: solo bloquea el guardado EXPLÍCITO (mostrarModal)
+    // — ahí no se guarda nada hasta corregirlo. El autoguardado (periódico de
+    // 10 min o por inactividad) NUNCA se salta ni bloquea una fila por falta
+    // de fecha — es la red de seguridad contra pérdida de datos mientras el
+    // usuario todavía está tipeando, así que siempre persiste lo que haya.
+    // El autoguardado periódico (alertarFechaFaltante) además muestra un
+    // aviso no bloqueante, como recordatorio; el de inactividad no avisa,
+    // para no interrumpir cada 60s mientras se está tipeando.
+    if (mostrarModal || alertarFechaFaltante) {
+        const filasParaRevisar = [];
+        PABS.forEach(pab => (dayData.pabs[pab] || []).forEach(f => filasParaRevisar.push(f)));
+        const faltantes = obtenerFilasSinFechaObligatoria(filasParaRevisar);
+        if (faltantes.length > 0) {
+            mostrarAlertaFechaFaltante(faltantes.length);
+            if (mostrarModal) return;
+        }
+    }
+
     const updates = {};
     let filasConDatos = 0;
     let filasEliminadas = 0;
@@ -51,7 +74,7 @@ async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = tru
             const docId = getFirebaseKey(rowKey);
             if (!docId) continue;
 
-            const tieneDatos = Object.values(fila).some(v => 
+            const tieneDatos = Object.values(fila).some(v =>
                 v && v !== '' && v !== 'Seleccione'
             );
 
@@ -171,6 +194,14 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
     const pabName = PABS[pabIdx];
     const rows = dayData.pabs[pabName] || [];
 
+    // 📅 FECHA obligatoria antes de guardar el pabellón (ver
+    // guardarDiaEnFirebaseOptimizadoConModal para el mismo criterio).
+    const faltantes = obtenerFilasSinFechaObligatoria(rows);
+    if (faltantes.length > 0) {
+        if (mostrarModal) mostrarAlertaFechaFaltante(faltantes.length);
+        return;
+    }
+
     const updates = {};
     let filasConDatos = 0;
     let filasEliminadas = 0;
@@ -181,7 +212,7 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
         const docId = getFirebaseKey(rowKey);
         if (!docId) continue;
 
-        const tieneDatos = Object.values(fila).some(v => 
+        const tieneDatos = Object.values(fila).some(v =>
             v && v !== '' && v !== 'Seleccione'
         );
 
@@ -655,7 +686,7 @@ function iniciarAutoSave() {
             const dayKey = `${currentWeek}-${currentDay}`;
             if (!isAutoSaving) {
                 console.log('🕒 Guardado automático programado (10 minutos)');
-                guardarDiaEnFirebaseOptimizadoConModal(dayKey, false).then(() => {
+                guardarDiaEnFirebaseOptimizadoConModal(dayKey, false, true).then(() => {
     renderWeekView(true); // ← true = auto-save, mantener scroll
 });
             }

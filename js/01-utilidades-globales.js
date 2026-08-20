@@ -23,6 +23,48 @@ function actualizarDiaActivo() {
 
 
 // =============================================================
+// 📅 FECHA OBLIGATORIA — una fila con datos de paciente cargados NO se
+// puede guardar (temporal ni definitivo), diferir, reubicar ni registrar
+// definitivamente si le falta FECHA. Reutilizado por js/02 (guardado),
+// js/03 (registrar definitivo) y js/08 (diferir/reubicar).
+// =============================================================
+const CAMPOS_DATOS_PACIENTE = [
+    'T_Qx', 'Jornada', 'Cirujano', 'Especialidad', 'Anestesista',
+    'Nombre_Paciente', 'RUT', 'Edad', 'FICHA', 'Diagnostico',
+    'Intervencion_propuesta', 'Condicion_LE', 'ESTADO_DE_IQx'
+];
+
+// true si la fila tiene un paciente cargado (sin contar FECHA, que es
+// justo el campo que estamos validando por separado).
+function filaTienePacienteCargado(fila) {
+    return CAMPOS_DATOS_PACIENTE.some(campo => {
+        const v = fila[campo] || '';
+        return v !== '' && v !== 'Seleccione';
+    });
+}
+
+function filaFechaVacia(fila) {
+    const v = fila['FECHA'] || '';
+    return v === '' || v === 'Seleccione';
+}
+
+// Filas (de la lista dada) que tienen paciente cargado pero les falta FECHA.
+function obtenerFilasSinFechaObligatoria(filas) {
+    return filas.filter(fila => filaTienePacienteCargado(fila) && filaFechaVacia(fila));
+}
+
+function mostrarAlertaFechaFaltante(cantidad) {
+    showModal({
+        title: '📅 Falta la fecha',
+        message: cantidad === 1
+            ? 'Hay una fila con datos de paciente pero sin <strong>FECHA</strong>.<br><br>Ingresa la fecha antes de continuar.'
+            : `Hay <strong>${cantidad} filas</strong> con datos de paciente pero sin <strong>FECHA</strong>.<br><br>Ingresa la fecha en todas antes de continuar.`,
+        icon: '📅',
+        confirmText: 'Aceptar'
+    });
+}
+
+// =============================================================
 // 📋 CAUSALES DE SUSPENSIÓN Y MOTIVOS
 // =============================================================
 const CAUSALES_SUSPENSION = {
