@@ -157,6 +157,84 @@ function crearHallazgoAnalisisIA(severidad, texto, recomendacion, meta) {
     return { severidad, texto, recomendacion: recomendacion || null, meta: meta || null };
 }
 
+// -------------------------------------------------------------
+// 🔁 COMPARACIÓN CON PERÍODO ANTERIOR EQUIVALENTE
+// Dado el rango analizado, calcula el rango de la misma duración
+// inmediatamente anterior (ej. si se analiza el 01–29 feb, el período
+// anterior es el 02–31 ene: mismos 29 días). Sirve para responder "¿mejoró
+// o empeoró respecto a lo anterior?" en vez de mostrar solo el número suelto.
+// -------------------------------------------------------------
+function calcularPeriodoAnteriorEquivalente(fechaInicio, fechaFin) {
+    const [yI, mI, dI] = fechaInicio.split('-').map(Number);
+    const [yF, mF, dF] = fechaFin.split('-').map(Number);
+    const inicio = new Date(yI, mI - 1, dI);
+    const fin = new Date(yF, mF - 1, dF);
+    const diasRango = Math.round((fin - inicio) / 86400000) + 1;
+
+    const finAnterior = new Date(inicio);
+    finAnterior.setDate(finAnterior.getDate() - 1);
+    const inicioAnterior = new Date(finAnterior);
+    inicioAnterior.setDate(inicioAnterior.getDate() - (diasRango - 1));
+
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { inicio: fmt(inicioAnterior), fin: fmt(finAnterior), dias: diasRango };
+}
+
+// Arma una frase de comparación lista para insertar dentro de un bullet
+// (sin punto final). tipo: 'pct' (compara en puntos porcentuales, ej.
+// índices) o 'num'/'horas' (compara en variación %, ej. conteos y horas).
+function compararConPeriodoAnterior(actual, anterior, tipo, decimales) {
+    if (anterior === null || anterior === undefined) {
+        return 'sin datos del período anterior equivalente para comparar';
+    }
+    const formatear = (v) => {
+        if (tipo === 'pct') return iaFmtPct(v);
+        if (tipo === 'horas') return estadisticasFormatearHoras(v);
+        return decimales ? v.toFixed(decimales) : Math.round(v).toLocaleString('es-CL');
+    };
+    if (tipo === 'pct') {
+        const delta = actual - anterior;
+        if (Math.abs(delta) < 0.5) return `se mantuvo estable respecto al período anterior (${formatear(anterior)})`;
+        const flecha = delta > 0 ? '⬆️ subió' : '⬇️ bajó';
+        return `${flecha} ${Math.abs(delta).toFixed(1)} punto(s) porcentuales respecto al período anterior (de ${formatear(anterior)} a ${formatear(actual)})`;
+    }
+    if (anterior === 0) {
+        return actual > 0
+            ? `sin actividad comparable en el período anterior equivalente (este período: ${formatear(actual)})`
+            : 'sin actividad registrada en ninguno de los dos períodos';
+    }
+    const deltaPct = ((actual - anterior) / anterior) * 100;
+    if (Math.abs(deltaPct) < 3) return `se mantuvo estable respecto al período anterior (${formatear(anterior)})`;
+    const flecha = deltaPct > 0 ? '⬆️ subió' : '⬇️ bajó';
+    return `${flecha} ${Math.abs(deltaPct).toFixed(0)}% respecto al período anterior (de ${formatear(anterior)} a ${formatear(actual)})`;
+}
+
+// -------------------------------------------------------------
+// 📈 TENDENCIA dentro de una serie mensual (pendiente de regresión lineal,
+// más robusta que comparar solo el primer y el último mes cuando hay ruido
+// mes a mes).
+// -------------------------------------------------------------
+function describirTendenciaSerie(valores, labels, unidad) {
+    if (!valores || valores.length < 2) return null;
+    const n = valores.length;
+    const promedio = valores.reduce((a, b) => a + b, 0) / n;
+    const xMean = (n - 1) / 2;
+    let num = 0, den = 0;
+    valores.forEach((v, i) => { num += (i - xMean) * (v - promedio); den += (i - xMean) ** 2; });
+    const pendiente = den !== 0 ? num / den : 0;
+    const cambioEstimado = pendiente * (n - 1);
+    const umbral = Math.max(1, promedio * 0.08);
+
+    let direccion;
+    if (Math.abs(cambioEstimado) < umbral) direccion = 'se mantuvo relativamente estable';
+    else if (cambioEstimado > 0) direccion = 'mostró una tendencia creciente';
+    else direccion = 'mostró una tendencia decreciente';
+
+    const primero = Math.round(valores[0]);
+    const ultimo = Math.round(valores[n - 1]);
+    return `La serie mensual ${direccion} a lo largo del periodo: partió en ${primero} ${unidad} en ${labels[0]} y cerró en ${ultimo} ${unidad} en ${labels[n - 1]} (promedio mensual: ${promedio.toFixed(1)} ${unidad}).`;
+}
+
 function iaMinutosDesdeHora(horaStr) {
     if (!horaStr) return null;
     const [h, m] = horaStr.split(':').map(Number);
@@ -449,7 +527,7 @@ function configChartProductividadMensualAnalisisIA(serie) {
 // -------------------------------------------------------------
 // 📘 SECCIÓN: Libro de Quirófano — Productividad y Ocupación
 // -------------------------------------------------------------
-async function analizarLibroQuirofano(fechaInicio, fechaFin, hallazgos) {
+async function analizarLibroQuirofano(fechaInicio, fechaFin, hallazgos, periodoAnterior) {
     const registros = filtrarRegistrosPorFechaEstadisticas(estadisticasRegistros, fechaInicio, fechaFin);
     const diasHabiles = calcularDiasHabiles(fechaInicio, fechaFin);
     const kpisOcup = calcularKpisOcupacion(registros, diasHabiles);
@@ -461,14 +539,33 @@ async function analizarLibroQuirofano(fechaInicio, fechaFin, hallazgos) {
     const tiemposMuertos = Math.max(0, kpisOcup.horasHabilitadas - kpisOcup.horasTrabajadas);
     const pctTiempoMuerto = estadisticasDivide(tiemposMuertos, kpisOcup.horasHabilitadas);
 
+    // Mismos cálculos, aplicados al período anterior equivalente (misma
+    // cantidad de días, inmediatamente antes) — es lo que permite comparar
+    // en vez de solo mostrar el número suelto del período actual.
+    let anterior = null;
+    if (periodoAnterior) {
+        const registrosAnt = filtrarRegistrosPorFechaEstadisticas(estadisticasRegistros, periodoAnterior.inicio, periodoAnterior.fin);
+        const diasHabilesAnt = calcularDiasHabiles(periodoAnterior.inicio, periodoAnterior.fin);
+        const kpisOcupAnt = calcularKpisOcupacion(registrosAnt, diasHabilesAnt);
+        const productividadAnt = calcularProductividadLibro(registrosAnt);
+        anterior = {
+            rangoTxt: `${formatearFechaLegibleAnalisisIA(periodoAnterior.inicio)}–${formatearFechaLegibleAnalisisIA(periodoAnterior.fin)}`,
+            total: productividadAnt.total,
+            casosPorDiaPromedio: productividadAnt.casosPorDiaPromedio,
+            porcentajeOcupacion: kpisOcupAnt.porcentajeOcupacion,
+            promedioDuracionHoras: productividadAnt.promedioDuracionHoras,
+            tiemposMuertos: Math.max(0, kpisOcupAnt.horasHabilitadas - kpisOcupAnt.horasTrabajadas)
+        };
+    }
+
     const bullets = [];
-    bullets.push(`Entre el ${formatearFechaLegibleAnalisisIA(fechaInicio)} y el ${formatearFechaLegibleAnalisisIA(fechaFin)} se registraron ${productividad.total} intervenciones en el Libro de Quirófano, distribuidas en ${productividad.diasConDatos} día(s) con actividad de un total de ${diasHabiles.length} día(s) hábil(es) en el periodo — es decir, hubo actividad quirúrgica en ${estadisticasDivide(productividad.diasConDatos, diasHabiles.length || 1).toFixed(0)}% de los días hábiles disponibles.`);
+    bullets.push(`Entre el ${formatearFechaLegibleAnalisisIA(fechaInicio)} y el ${formatearFechaLegibleAnalisisIA(fechaFin)} se registraron ${productividad.total} intervenciones en el Libro de Quirófano, distribuidas en ${productividad.diasConDatos} día(s) con actividad de un total de ${diasHabiles.length} día(s) hábil(es) en el periodo — es decir, hubo actividad quirúrgica en ${estadisticasDivide(productividad.diasConDatos, diasHabiles.length || 1).toFixed(0)}% de los días hábiles disponibles.${anterior ? ` Frente al período anterior equivalente (${anterior.rangoTxt}, ${anterior.total} intervenciones), el total ${compararConPeriodoAnterior(productividad.total, anterior.total, 'num')}.` : ''}`);
     bullets.push(`Distribución por pabellón: PAB 1 concentró ${productividad.porPabellon['PAB 1']} caso(s) y PAB 2 concentró ${productividad.porPabellon['PAB 2']} caso(s)${productividad.porPabellon['Sin Pabellón'] ? `; ${productividad.porPabellon['Sin Pabellón']} caso(s) no tienen pabellón asignado en el registro` : ''}. Esta distribución permite ver si la carga quirúrgica está equilibrada entre ambos pabellones o concentrada en uno de ellos.`);
-    bullets.push(`Productividad: ${productividad.casosPorDiaPromedio.toFixed(1)} casos por día en promedio, considerando solo los días en que efectivamente hubo registros (no se diluye el promedio con días sin actividad, como fines de semana o feriados).`);
-    bullets.push(`Ocupación de pabellón: ${iaFmtPct(kpisOcup.porcentajeOcupacion)} — de las ${estadisticasFormatearHoras(kpisOcup.horasHabilitadas)} de pabellón disponibles en horario hábil (08:00–17:00) durante el periodo, se trabajaron efectivamente ${estadisticasFormatearHoras(kpisOcup.horasTrabajadas)} (incluye el tiempo de viraje/aseo entre cirugías). Este indicador resume qué tan aprovechada está la capacidad instalada de pabellón.`);
-    bullets.push(`Tiempo muerto de pabellón: ${estadisticasFormatearHoras(tiemposMuertos)} (${iaFmtPct(pctTiempoMuerto)} del tiempo habilitado) — corresponde al tiempo de pabellón disponible que NO se utilizó, ya sea por bloques sin pacientes programados, suspensiones o baja programación en ciertos días.`);
-    bullets.push(`Duración promedio de intervención (T. Qx): ${estadisticasFormatearHoras(productividad.promedioDuracionHoras)}, considerando todas las intervenciones con duración registrada en el periodo.`);
-    bullets.push(`Cirugías realizadas en horario inhábil (fuera de 08:00–17:00): ${kpisInhabil.totalCirugias} caso(s), equivalentes a ${estadisticasFormatearHoras(kpisInhabil.horasTrabajadas)} de pabellón, de las cuales ${kpisInhabil.totalUrgencias} fueron urgencias — el resto son cirugías electivas que se extendieron fuera del horario hábil.`);
+    bullets.push(`Productividad: ${productividad.casosPorDiaPromedio.toFixed(1)} casos por día en promedio, considerando solo los días en que efectivamente hubo registros (no se diluye el promedio con días sin actividad, como fines de semana o feriados).${anterior ? ` Esto ${compararConPeriodoAnterior(productividad.casosPorDiaPromedio, anterior.casosPorDiaPromedio, 'num', 1)} respecto al período anterior.` : ''}`);
+    bullets.push(`Ocupación de pabellón: ${iaFmtPct(kpisOcup.porcentajeOcupacion)} — de las ${estadisticasFormatearHoras(kpisOcup.horasHabilitadas)} de pabellón disponibles en horario hábil (08:00–17:00) durante el periodo, se trabajaron efectivamente ${estadisticasFormatearHoras(kpisOcup.horasTrabajadas)} (incluye el tiempo de viraje/aseo entre cirugías). Este indicador resume qué tan aprovechada está la capacidad instalada de pabellón.${anterior ? ` La ocupación ${compararConPeriodoAnterior(kpisOcup.porcentajeOcupacion, anterior.porcentajeOcupacion, 'pct')}.` : ''}`);
+    bullets.push(`Tiempo muerto de pabellón: ${estadisticasFormatearHoras(tiemposMuertos)} (${iaFmtPct(pctTiempoMuerto)} del tiempo habilitado) — corresponde al tiempo de pabellón disponible que NO se utilizó, ya sea por bloques sin pacientes programados, suspensiones o baja programación en ciertos días.${productividad.promedioDuracionHoras > 0 ? ` En términos concretos, ese tiempo perdido equivale aproximadamente a ${Math.floor(tiemposMuertos / productividad.promedioDuracionHoras)} cirugía(s) adicional(es) que podrían haberse realizado con la duración promedio del periodo, de haberse aprovechado por completo.` : ''}${anterior ? ` El tiempo muerto ${compararConPeriodoAnterior(tiemposMuertos, anterior.tiemposMuertos, 'horas')}.` : ''}`);
+    bullets.push(`Duración promedio de intervención (T. Qx): ${estadisticasFormatearHoras(productividad.promedioDuracionHoras)}, considerando todas las intervenciones con duración registrada en el periodo.${anterior ? ` La duración promedio ${compararConPeriodoAnterior(productividad.promedioDuracionHoras, anterior.promedioDuracionHoras, 'horas')} — un cambio sostenido en este número impacta directamente cuántos pacientes caben en cada bloque de pabellón.` : ''}`);
+    bullets.push(`Cirugías realizadas en horario inhábil (fuera de 08:00–17:00): ${kpisInhabil.totalCirugias} caso(s), equivalentes a ${estadisticasFormatearHoras(kpisInhabil.horasTrabajadas)} de pabellón, de las cuales ${kpisInhabil.totalUrgencias} fueron urgencias — el resto son cirugías electivas que se extendieron fuera del horario hábil. Cada cirugía electiva fuera de horario implica costo de horas extraordinarias de personal y mayor riesgo de fatiga del equipo quirúrgico.`);
 
     const generalHorarios = analisisHorarios[0];
     if (generalHorarios.am.casos > 0) {
@@ -600,6 +697,8 @@ async function analizarLibroQuirofano(fechaInicio, fechaFin, hallazgos) {
     if (serieProductividad.labels.length > 1) {
         const chartProductividad = await capturarChartNuevoAnalisisIA(configChartProductividadMensualAnalisisIA(serieProductividad), 900, 420);
         if (chartProductividad) imagenes.push({ titulo: 'Productividad Mensual (casos por mes) del Periodo Filtrado', ...chartProductividad });
+        const textoTendencia = describirTendenciaSerie(serieProductividad.valores, serieProductividad.labels, 'caso(s)');
+        if (textoTendencia) bullets.push(textoTendencia);
     }
 
     return { titulo: '📘 Libro de Quirófano — Productividad y Ocupación', bullets, tablas, imagenes };
@@ -608,16 +707,52 @@ async function analizarLibroQuirofano(fechaInicio, fechaFin, hallazgos) {
 // -------------------------------------------------------------
 // 📊 SECCIONES: bloques de Estadísticas
 // -------------------------------------------------------------
-function analizarBloqueEstadisticas(pagina, hallazgos) {
+// Año transcurrido a la fecha (0–100%): sirve para juzgar si el % de una
+// meta anual va "a buen ritmo" o "atrasada" — no basta con mirar el % de
+// cumplimiento solo, hay que compararlo contra cuánto del año ya pasó.
+function calcularRitmoEsperadoAnio(anio) {
+    const hoy = new Date();
+    if (anio < hoy.getFullYear()) return 100;
+    if (anio > hoy.getFullYear()) return 0;
+    const inicioAnio = new Date(anio, 0, 1);
+    const finAnio = new Date(anio, 11, 31);
+    const diasTranscurridos = Math.floor((hoy - inicioAnio) / 86400000) + 1;
+    const diasTotales = Math.floor((finAnio - inicioAnio) / 86400000) + 1;
+    return Math.min(100, (diasTranscurridos / diasTotales) * 100);
+}
+
+// Serie mensual de intervenciones Cmay electivas (excluye lo mismo que
+// REM_ESTADOS_EXCLUIDOS_GENERAL) — usada para describir la tendencia de
+// producción en el bloque "Producción por Especialidad".
+function construirSerieCmayMensualAnalisisIA(registros, fechaInicio, fechaFin) {
+    const buckets = generarBucketsMensuales(fechaInicio, fechaFin);
+    const porClave = {};
+    buckets.forEach(b => { porClave[b.key] = 0; });
+    registros.forEach(r => {
+        if (REM_ESTADOS_EXCLUIDOS_GENERAL.includes(r.ESTADO_DE_IQx)) return;
+        const f = normalizarFechaComparable(r.FECHA);
+        if (!f || porClave[f.slice(0, 7)] === undefined) return;
+        porClave[f.slice(0, 7)] += [r.Tipo_Actividad, r.Tipo_Actividad_2, r.Tipo_Actividad_3].filter(t => t === 'Cmay').length;
+    });
+    return { labels: buckets.map(b => b.label), valores: buckets.map(b => porClave[b.key]) };
+}
+
+function analizarBloqueEstadisticas(pagina, hallazgos, periodoAnterior) {
     const registrosFiltrados = filtrarRegistrosPorFechaEstadisticas(estadisticasRegistros, estadisticasFiltroFechaInicio, estadisticasFiltroFechaFin);
+    // Registros del período anterior equivalente, con las MISMAS fechas de
+    // Estadísticas usadas por este bloque (no las de Libro de Quirófano, que
+    // pueden diferir si el usuario cambió el rango después de generar esa
+    // sección) — se recalculan aquí para no arrastrar estado entre bloques.
+    const registrosAnt = periodoAnterior ? filtrarRegistrosPorFechaEstadisticas(estadisticasRegistros, periodoAnterior.inicio, periodoAnterior.fin) : null;
 
     if (pagina === 0) {
         const kpis = calcularKPIsEstadisticas(registrosFiltrados);
+        const kpisAnt = registrosAnt ? calcularKPIsEstadisticas(registrosAnt) : null;
         const bullets = [
-            `Se programaron ${kpis.totalProgramados} pacientes en el periodo (${kpis.progCmay} de ellos Cmay), de los cuales ${kpis.totalSuspendidos} terminaron suspendidos (${kpis.suspCmay} Cmay) — es decir, no se concretó la cirugía en la fecha programada.`,
-            `El índice de suspensión Cmay del periodo es ${iaFmtPct(kpis.indiceSuspension)} (${iaFmtPct(kpis.indiceSuspensionSinUrgencia)} si se excluyen los reemplazos por urgencia, que no son evitables por gestión de programación). Este indicador mide qué proporción de lo programado no llegó a operarse.`,
-            `Total de pacientes efectivamente operados: ${kpis.totalOperados}, sumando programados que se concretaron, agregados (${kpis.totalAgregados}), condicionales operados (${kpis.totalCondOperados}) y urgencias (${kpis.totalUrgencia}).`,
-            `Índice de ambulatorización (Cmay programado → destino CMA): ${iaFmtPct(kpis.indiceAmbulatorizacion)} — refleja qué porcentaje de la cirugía mayor programada se resolvió por vía ambulatoria en vez de con hospitalización.`
+            `Se programaron ${kpis.totalProgramados} pacientes en el periodo (${kpis.progCmay} de ellos Cmay), de los cuales ${kpis.totalSuspendidos} terminaron suspendidos (${kpis.suspCmay} Cmay) — es decir, no se concretó la cirugía en la fecha programada.${kpisAnt ? ` Los pacientes programados ${compararConPeriodoAnterior(kpis.totalProgramados, kpisAnt.totalProgramados, 'num')} y las suspensiones ${compararConPeriodoAnterior(kpis.totalSuspendidos, kpisAnt.totalSuspendidos, 'num')} frente al período anterior equivalente.` : ''}`,
+            `El índice de suspensión Cmay del periodo es ${iaFmtPct(kpis.indiceSuspension)} (${iaFmtPct(kpis.indiceSuspensionSinUrgencia)} si se excluyen los reemplazos por urgencia, que no son evitables por gestión de programación). Este indicador mide qué proporción de lo programado no llegó a operarse.${kpisAnt ? ` El índice ${compararConPeriodoAnterior(kpis.indiceSuspension, kpisAnt.indiceSuspension, 'pct')} — cada punto porcentual representa aproximadamente ${Math.round(kpis.progCmay / 100)} paciente(s) Cmay reprogramado(s), con el consiguiente tiempo de pabellón perdido y demora adicional en la lista de espera.` : ''}`,
+            `Total de pacientes efectivamente operados: ${kpis.totalOperados}, sumando programados que se concretaron, agregados (${kpis.totalAgregados}), condicionales operados (${kpis.totalCondOperados}) y urgencias (${kpis.totalUrgencia}).${kpisAnt ? ` Este total ${compararConPeriodoAnterior(kpis.totalOperados, kpisAnt.totalOperados, 'num')}.` : ''}`,
+            `Índice de ambulatorización (Cmay programado → destino CMA): ${iaFmtPct(kpis.indiceAmbulatorizacion)} — refleja qué porcentaje de la cirugía mayor programada se resolvió por vía ambulatoria en vez de con hospitalización.${kpisAnt ? ` ${compararConPeriodoAnterior(kpis.indiceAmbulatorizacion, kpisAnt.indiceAmbulatorizacion, 'pct')} — subir este índice reduce directamente los días-cama de hospitalización usados.` : ''}`
         ];
         if (kpis.progCmay > 0 && kpis.indiceSuspension > 10) {
             hallazgos.push(crearHallazgoAnalisisIA('alerta',
@@ -631,25 +766,43 @@ function analizarBloqueEstadisticas(pagina, hallazgos) {
 
     if (pagina === 1) {
         const kpisRem = calcularKpisRem(filtrarRegistrosRem(estadisticasRegistros));
+        let kpisRemAnt = null;
+        if (periodoAnterior) {
+            // filtrarRegistrosRem() lee el filtro global de fechas en vez de
+            // recibirlas por parámetro — se cambia temporalmente al período
+            // anterior solo para este cálculo y se restaura enseguida.
+            const inicioPrevio = estadisticasFiltroFechaInicio;
+            const finPrevio = estadisticasFiltroFechaFin;
+            estadisticasFiltroFechaInicio = periodoAnterior.inicio;
+            estadisticasFiltroFechaFin = periodoAnterior.fin;
+            try {
+                kpisRemAnt = calcularKpisRem(filtrarRegistrosRem(estadisticasRegistros));
+            } finally {
+                estadisticasFiltroFechaInicio = inicioPrevio;
+                estadisticasFiltroFechaFin = finPrevio;
+            }
+        }
         const bullets = [
-            `Producción total (REM): ${kpisRem.totales.total} intervenciones registradas (Cmay: ${kpisRem.totales.cmay}, Cmen: ${kpisRem.totales.cmen}, Proc: ${kpisRem.totales.proc}) — cada fila puede aportar hasta 3 intervenciones (1ra, 2da, 3ra), por eso este total puede superar el número de pacientes. Este total NO incluye las intervenciones de urgencia, que se excluyen de la producción general y se contabilizan aparte.`,
-            `Por separado, se registraron ${kpisRem.urgencia.total} intervenciones de urgencia (Cmay: ${kpisRem.urgencia.cmay}, Cmen: ${kpisRem.urgencia.cmen}, Proc: ${kpisRem.urgencia.proc}) — al no ser programables con anticipación, no se suman a la producción general de arriba, pero sí reflejan carga real de pabellón.`,
+            `Producción total (REM): ${kpisRem.totales.total} intervenciones registradas (Cmay: ${kpisRem.totales.cmay}, Cmen: ${kpisRem.totales.cmen}, Proc: ${kpisRem.totales.proc}) — cada fila puede aportar hasta 3 intervenciones (1ra, 2da, 3ra), por eso este total puede superar el número de pacientes. Este total NO incluye las intervenciones de urgencia, que se excluyen de la producción general y se contabilizan aparte.${kpisRemAnt ? ` La producción total ${compararConPeriodoAnterior(kpisRem.totales.total, kpisRemAnt.totales.total, 'num')} respecto al período anterior equivalente.` : ''}`,
+            `Por separado, se registraron ${kpisRem.urgencia.total} intervenciones de urgencia (Cmay: ${kpisRem.urgencia.cmay}, Cmen: ${kpisRem.urgencia.cmen}, Proc: ${kpisRem.urgencia.proc}) — al no ser programables con anticipación, no se suman a la producción general de arriba, pero sí reflejan carga real de pabellón.${kpisRemAnt ? ` Las urgencias ${compararConPeriodoAnterior(kpisRem.urgencia.total, kpisRemAnt.urgencia.total, 'num')} — un alza sostenida de urgencias suele presionar tanto la disponibilidad de pabellón como el descanso del equipo de guardia.` : ''}`,
             `Distribución etaria de Cmay (dentro de la producción general, sin urgencias): ${kpisRem.edad.mayores} intervenciones en pacientes ≥15 años y ${kpisRem.edad.menores} en <15 años, siguiendo el criterio de clasificación REM adulto/pediátrico.`
         ];
         return { titulo: '🏥 REM (Cmay) / Especialidades Quirúrgicas', bullets };
     }
 
     if (pagina === 2) {
-        return {
-            titulo: '📈 Producción por Especialidad (Cmay)',
-            bullets: ['Se adjunta la evolución mensual de producción por especialidad (pacientes Cmay operados vs. intervenciones Cmay registradas), mostrada de a 2 especialidades por lámina en tamaño grande — si hay más de 2, se generan láminas adicionales. Este gráfico permite identificar tendencias de crecimiento, caída o estacionalidad por especialidad a lo largo del año.']
-        };
+        const bullets = ['Se adjunta la evolución mensual de producción por especialidad (pacientes Cmay operados vs. intervenciones Cmay registradas), mostrada de a 2 especialidades por lámina en tamaño grande — si hay más de 2, se generan láminas adicionales.'];
+        const serieCmay = construirSerieCmayMensualAnalisisIA(registrosFiltrados, estadisticasFiltroFechaInicio, estadisticasFiltroFechaFin);
+        const textoTendencia = describirTendenciaSerie(serieCmay.valores, serieCmay.labels, 'intervención(es) Cmay');
+        if (textoTendencia) bullets.push(`Tendencia agregada de todas las especialidades: ${textoTendencia.charAt(0).toLowerCase()}${textoTendencia.slice(1)}`);
+        return { titulo: '📈 Producción por Especialidad (Cmay)', bullets };
     }
 
     if (pagina === 3) {
         const amb = calcularAmbulatorizacion(registrosFiltrados);
+        const ambAnt = registrosAnt ? calcularAmbulatorizacion(registrosAnt) : null;
         const bullets = [
-            `Índice de ambulatorización global del periodo: ${iaFmtPct(amb.indice)} (${amb.numerador} de ${amb.denominador} pacientes Cmay programados terminaron con destino CMA en vez de hospitalización).`,
+            `Índice de ambulatorización global del periodo: ${iaFmtPct(amb.indice)} (${amb.numerador} de ${amb.denominador} pacientes Cmay programados terminaron con destino CMA en vez de hospitalización).${ambAnt ? ` El índice ${compararConPeriodoAnterior(amb.indice, ambAnt.indice, 'pct')} respecto al período anterior equivalente.` : ''}`,
             'Se adjunta el ranking por especialidad (quién ambulatoriza más y quién menos) y el desglose mensual del proceso ambulatorio, mostrado de a 2 especialidades por lámina en tamaño grande.'
         ];
         if (amb.denominador > 0 && amb.indice < 30) {
@@ -665,10 +818,15 @@ function analizarBloqueEstadisticas(pagina, hallazgos) {
     if (pagina === 4) {
         const diasHabiles = calcularDiasHabiles(estadisticasFiltroFechaInicio, estadisticasFiltroFechaFin);
         const kpis = calcularKpisOcupacion(registrosFiltrados, diasHabiles);
+        let kpisAnt = null;
+        if (periodoAnterior && registrosAnt) {
+            const diasHabilesAnt = calcularDiasHabiles(periodoAnterior.inicio, periodoAnterior.fin);
+            kpisAnt = calcularKpisOcupacion(registrosAnt, diasHabilesAnt);
+        }
         const bullets = [
-            `Ocupación de pabellón (bloque de Estadísticas, rango ${formatearFechaLegibleAnalisisIA(estadisticasFiltroFechaInicio)} – ${formatearFechaLegibleAnalisisIA(estadisticasFiltroFechaFin)}): ${iaFmtPct(kpis.porcentajeOcupacion)} (${estadisticasFormatearHoras(kpis.horasTrabajadas)} trabajadas de ${estadisticasFormatearHoras(kpis.horasHabilitadas)} habilitadas, sobre ${kpis.diasHabiles} días hábiles).`,
-            `Rendimiento por pabellón: ${kpis.rendimientoSoloProgCmay.toFixed(2)} casos/pabellón/día considerando solo Cmay programado, y ${kpis.rendimientoTotalCx.toFixed(2)} casos/pabellón/día si se cuenta toda la actividad (Cmay + Cmen + Proc). La brecha entre ambos números muestra cuánta producción viene de intervenciones menores/procedimientos.`,
-            `Horas trabajadas en horario de urgencia: ${estadisticasFormatearHoras(kpis.horasUrgencia)}, equivalentes al ${iaFmtPct(kpis.porcentajeUrgencia)} del tiempo total trabajado.`
+            `Ocupación de pabellón (bloque de Estadísticas, rango ${formatearFechaLegibleAnalisisIA(estadisticasFiltroFechaInicio)} – ${formatearFechaLegibleAnalisisIA(estadisticasFiltroFechaFin)}): ${iaFmtPct(kpis.porcentajeOcupacion)} (${estadisticasFormatearHoras(kpis.horasTrabajadas)} trabajadas de ${estadisticasFormatearHoras(kpis.horasHabilitadas)} habilitadas, sobre ${kpis.diasHabiles} días hábiles).${kpisAnt ? ` La ocupación ${compararConPeriodoAnterior(kpis.porcentajeOcupacion, kpisAnt.porcentajeOcupacion, 'pct')}.` : ''}${kpis.porcentajeOcupacion > 100 ? ' Un valor sobre 100% indica que se trabajó más de lo formalmente habilitado en el período (típicamente por urgencias atendidas en bloques marcados como no disponibles) — no es un error de cálculo, sino actividad real por encima de la capacidad planificada.' : ''}`,
+            `Rendimiento por pabellón: ${kpis.rendimientoSoloProgCmay.toFixed(2)} casos/pabellón/día considerando solo Cmay programado, y ${kpis.rendimientoTotalCx.toFixed(2)} casos/pabellón/día si se cuenta toda la actividad (Cmay + Cmen + Proc). La brecha entre ambos números muestra cuánta producción viene de intervenciones menores/procedimientos.${kpisAnt ? ` El rendimiento total ${compararConPeriodoAnterior(kpis.rendimientoTotalCx, kpisAnt.rendimientoTotalCx, 'num', 2)} respecto al período anterior.` : ''}`,
+            `Horas trabajadas en horario de urgencia: ${estadisticasFormatearHoras(kpis.horasUrgencia)}, equivalentes al ${iaFmtPct(kpis.porcentajeUrgencia)} del tiempo total trabajado.${kpisAnt ? ` Las horas de urgencia ${compararConPeriodoAnterior(kpis.horasUrgencia, kpisAnt.horasUrgencia, 'horas')}.` : ''}`
         ];
         return { titulo: '🏨 Ocupación y Rendimiento Pabellón', bullets };
     }
@@ -678,8 +836,10 @@ function analizarBloqueEstadisticas(pagina, hallazgos) {
         const meses = calcularPerianalgesiaPorMes(estadisticasRegistros, anio);
         const total = meses.reduce((a, b) => a + b, 0);
         const maxIdx = meses.indexOf(Math.max(...meses));
+        const mesesAnt = calcularPerianalgesiaPorMes(estadisticasRegistros, anio - 1);
+        const totalAnt = mesesAnt.reduce((a, b) => a + b, 0);
         const bullets = [
-            `Total de perianalgesias (parto) registradas en ${anio}: ${total}. Este bloque muestra comportamiento anual completo (no se rige por el rango de fechas elegido para este informe, ya que sigue su propio selector de año dentro de Estadísticas).`,
+            `Total de perianalgesias (parto) registradas en ${anio}: ${total}. Este bloque muestra comportamiento anual completo (no se rige por el rango de fechas elegido para este informe, ya que sigue su propio selector de año dentro de Estadísticas). Comparado con ${anio - 1} (${totalAnt} caso(s)), el volumen ${compararConPeriodoAnterior(total, totalAnt, 'num')}.`,
             total > 0 ? `El mes con mayor volumen fue ${ESTADISTICAS_NOMBRES_MES[maxIdx]}, con ${meses[maxIdx]} caso(s) — útil como referencia de estacionalidad para la dotación de matronería/anestesia.` : 'Sin casos registrados en el año.'
         ];
         return { titulo: '🤰 Perianalgesia (Parto) por Mes', bullets };
@@ -701,10 +861,15 @@ function analizarBloqueEstadisticas(pagina, hallazgos) {
             const pctCumplido = cfg.meta > 0 ? (actual / cfg.meta) * 100 : 0;
             const actualTxt = m.esPct ? iaFmtPct(actual) : actual;
             const metaTxt = m.esPct ? `${cfg.meta}%` : cfg.meta;
-            bullets.push(`${m.label} (${cfg.anio}): ${actualTxt} de meta ${metaTxt} → ${iaFmtPct(pctCumplido)} cumplido.`);
+            const ritmoEsperado = calcularRitmoEsperadoAnio(cfg.anio);
+            const brecha = pctCumplido - ritmoEsperado;
+            const ritmoTxt = Math.abs(brecha) <= 3
+                ? 'alineado con el ritmo esperado para la fecha'
+                : (brecha > 0 ? `adelantado ${brecha.toFixed(0)} punto(s) respecto al ritmo esperado` : `atrasado ${Math.abs(brecha).toFixed(0)} punto(s) respecto al ritmo esperado`);
+            bullets.push(`${m.label} (${cfg.anio}): ${actualTxt} de meta ${metaTxt} → ${iaFmtPct(pctCumplido)} cumplido. Ya transcurrió ${iaFmtPct(ritmoEsperado)} del año ${cfg.anio}, por lo que el ritmo actual va ${ritmoTxt} para llegar a la meta a fin de año.`);
             if (pctCumplido < 80) {
                 hallazgos.push(crearHallazgoAnalisisIA('atencion',
-                    `La meta "${m.label}" (${cfg.anio}) lleva un ${iaFmtPct(pctCumplido)} de cumplimiento.`,
+                    `La meta "${m.label}" (${cfg.anio}) lleva un ${iaFmtPct(pctCumplido)} de cumplimiento (ritmo ${ritmoTxt}).`,
                     `Evaluar el ritmo de producción restante del año para la meta de ${m.label} y reforzar las acciones necesarias para acercarse al objetivo.`,
                     null
                 ));
@@ -868,10 +1033,15 @@ async function generarAnalisisIA() {
         const hallazgos = [];
         const secciones = [];
 
+        // Período inmediatamente anterior, de la misma duración — permite
+        // que cada bloque compare "este período vs. el anterior" en vez de
+        // mostrar solo el número suelto del rango elegido.
+        const periodoAnterior = calcularPeriodoAnteriorEquivalente(analisisIaFechaInicio, analisisIaFechaFin);
+
         // El rango elegido gobierna tanto el Libro de Quirófano (siempre se
         // analiza) como los bloques de Estadísticas (opcionales).
         overlayEspera.textContent = '⏳ Analizando Libro de Quirófano...';
-        const seccionLibro = await analizarLibroQuirofano(analisisIaFechaInicio, analisisIaFechaFin, hallazgos);
+        const seccionLibro = await analizarLibroQuirofano(analisisIaFechaInicio, analisisIaFechaFin, hallazgos, periodoAnterior);
         secciones.push(seccionLibro);
 
         if (analisisIaBloquesSeleccionados.size > 0) {
@@ -891,7 +1061,7 @@ async function generarAnalisisIA() {
             const bloquesOrdenados = ANALISIS_IA_BLOQUES_ESTADISTICAS.filter(b => analisisIaBloquesSeleccionados.has(b.pagina));
             for (const bloque of bloquesOrdenados) {
                 overlayEspera.textContent = `⏳ Analizando ${bloque.label}...`;
-                const narrativa = analizarBloqueEstadisticas(bloque.pagina, hallazgos);
+                const narrativa = analizarBloqueEstadisticas(bloque.pagina, hallazgos, periodoAnterior);
                 const laminas = laminasResueltas.filter(l => l.pagina === bloque.pagina);
                 const imagenes = [];
                 for (const l of laminas) {
