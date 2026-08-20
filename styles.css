@@ -423,6 +423,17 @@ td:has(input[data-col="Hora_de_salida"]) input, td:has(input[data-col="T_QX"]) i
     justify-content: flex-end;
     margin-top: 10px;
     flex-wrap: wrap;
+    /* El grupo de botones de cada pabellón (Agregar Fila/Guardar Pabellón/
+       Limpiar Pabellón) vive DENTRO de .table-wrap, que es lo que scrollea
+       horizontalmente. position:sticky no daba resultado consistente ahí
+       (el contenedor no le dejaba margen real para desplazarse), así que el
+       seguimiento en tiempo real se hace por JS — ver
+       inicializarScrollBotonesPabellon() en js/07-render-tabla-dia.js, que
+       aplica un transform:translateX(scrollLeft) mientras se scrollea
+       .table-wrap. Acá solo se deja la caja angosta y pegada a la derecha
+       en su posición de reposo (sin scroll). */
+    width: fit-content;
+    margin-left: auto;
 }
 .btn-sm {
     background: #eef2f6;

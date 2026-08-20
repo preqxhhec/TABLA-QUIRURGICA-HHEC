@@ -237,3 +237,27 @@ async function renderDayTable(dayData, semanaIdx, diaIdx) {
     html += `</div>`; // cierre day-table-container
     return html;
 }
+
+// =============================================================
+// 📌 SEGUIR EL SCROLL HORIZONTAL DE LA TABLA CON LOS BOTONES DE PABELLÓN
+// =============================================================
+// El grupo de botones de cada pabellón (Agregar Fila/Guardar Pabellón/
+// Limpiar Pabellón) vive DENTRO de .table-wrap (el contenedor que scrollea
+// horizontalmente). position:sticky no logró un resultado consistente ahí
+// (el contenedor no le dejaba margen real de desplazamiento), así que se
+// sigue el scroll de forma directa: al scrollear .table-wrap, se desplaza
+// el grupo de botones con un transform en sentido contrario, para que
+// visualmente se quede fijo pegado al borde derecho de lo que se ve.
+// Debe llamarse cada vez que se vuelve a renderizar el día (el HTML se
+// reconstruye por completo, así que no hay listeners que se acumulen).
+function inicializarScrollBotonesPabellon() {
+    document.querySelectorAll('#weekContent .table-wrap').forEach(wrap => {
+        function actualizarBotones() {
+            wrap.querySelectorAll('.pab-block > .btn-group').forEach(grupo => {
+                grupo.style.transform = `translateX(${wrap.scrollLeft}px)`;
+            });
+        }
+        wrap.addEventListener('scroll', actualizarBotones);
+        actualizarBotones();
+    });
+}
