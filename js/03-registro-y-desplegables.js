@@ -274,6 +274,8 @@ function obtenerOpcionesCache(key) {
                         fila[col] = '';
                     }
                 });
+                fila['Ya_Diferido'] = false;
+                fila['Ya_Reubicado'] = false;
             });
         });
 

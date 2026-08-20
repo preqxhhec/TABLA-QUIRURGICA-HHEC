@@ -388,6 +388,8 @@ function imprimirDia(dayKey) {
                 row[col] = '';
             }
         });
+        row['Ya_Diferido'] = false;
+        row['Ya_Reubicado'] = false;
     });
 
     // ✅ 2. UNA SOLA LLAMADA A FIREBASE
@@ -467,6 +469,8 @@ function imprimirDia(dayKey) {
                     row[col] = '';
                 }
             });
+            row['Ya_Diferido'] = false;
+            row['Ya_Reubicado'] = false;
         });
     });
 
@@ -574,7 +578,7 @@ function imprimirDia(dayKey) {
         }
 
         const mensajeConfirmacion = esSuspendido ?
-            `¿Estás seguro de diferir al paciente <strong>${fila.Nombre_Paciente || 'sin nombre'}</strong>?<br><br>📌 Se copiarán los datos a "Pacientes Diferidos".<br>📌 <strong>⚠️ El paciente está SUSPENDIDO, por lo que NO se eliminará de la tabla.</strong>` :
+            `¿Estás seguro de diferir al paciente <strong>${fila.Nombre_Paciente || 'sin nombre'}</strong>?<br><br>📌 Se copiarán los datos a "Pacientes Diferidos".<br>📌 <strong>⚠️ El estado (${fila['ESTADO_DE_IQx']}) hace que NO se elimine de la tabla</strong> — permanece en esta fila.<br>📌 Después de diferir, los botones ⏩ y 🔄 de esta fila quedarán bloqueados (para evitar que el paciente quede duplicado).` :
             `¿Estás seguro de diferir al paciente <strong>${fila.Nombre_Paciente || 'sin nombre'}</strong>?<br><br>📌 Se copiarán los datos a "Pacientes Diferidos".<br>📌 La fila actual se limpiará.`;
 
         const confirmado = await showModal({
@@ -613,6 +617,10 @@ function imprimirDia(dayKey) {
                 });
                 fila['ESTADO_DE_IQx'] = 'Seleccione';
                 fila['Motivo'] = '';
+                // Por si la fila había quedado marcada como ya diferida/reubicada
+                // en un ciclo SUSPENDIDO/CONDICIONAL anterior sobre esta misma fila.
+                fila['Ya_Diferido'] = false;
+                fila['Ya_Reubicado'] = false;
 
                 const rowKeyOriginal = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
                 const docId = getFirebaseKey(rowKeyOriginal);
@@ -632,6 +640,8 @@ function imprimirDia(dayKey) {
                         }
                     });
                     filaVacia['Color'] = fila['Color'] || '';
+                    filaVacia['Ya_Diferido'] = false;
+                    filaVacia['Ya_Reubicado'] = false;
                     await database.ref('registros_quirurgicos/' + docId).update(filaVacia);
                     console.log(`✅ Fila ${docId} limpiada en Firebase`);
                 }
@@ -639,15 +649,20 @@ function imprimirDia(dayKey) {
                 const rowKeyOriginal = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
                 const docId = getFirebaseKey(rowKeyOriginal);
                 if (docId) {
+                    // Se bloquean AMBOS botones (no solo Diferir): evita que
+                    // el paciente termine duplicado si además se reubica esta
+                    // misma fila después de haber sido diferida.
+                    fila['Ya_Diferido'] = true;
+                    fila['Ya_Reubicado'] = true;
                     await guardarFilaEnFirebase(rowKeyOriginal, fila);
-                    console.log(`✅ Fila ${docId} actualizada en Firebase (SUSPENDIDO - no se elimina)`);
+                    console.log(`✅ Fila ${docId} actualizada en Firebase (SUSPENDIDO - no se elimina, Diferir y Reubicar bloqueados)`);
                 }
             }
 
             renderWeekView();
 
             const mensajeExito = esSuspendido ?
-                `El paciente <strong>${datosDiferidos.Nombre_Paciente || 'sin nombre'}</strong> ha sido diferido correctamente.<br><br>📌 El paciente está SUSPENDIDO, por lo que permanece en la tabla.<br>📌 Puedes verlo en la sección "Pacientes Diferidos".` :
+                `El paciente <strong>${datosDiferidos.Nombre_Paciente || 'sin nombre'}</strong> ha sido diferido correctamente.<br><br>📌 Por su estado (${datosDiferidos.ESTADO_DE_IQx}), permanece en esta fila de la tabla.<br>📌 Los botones Diferir y Reubicar de esta fila quedan bloqueados.<br>📌 Puedes verlo en la sección "Pacientes Diferidos".` :
                 `El paciente <strong>${datosDiferidos.Nombre_Paciente || 'sin nombre'}</strong> ha sido diferido correctamente.<br><br>📌 Puedes verlo en la sección "Pacientes Diferidos".`;
 
             showModal({
@@ -977,6 +992,10 @@ function imprimirDia(dayKey) {
                     filaOrigen[col] = '';
                 }
             });
+            // Por si la fila había quedado marcada como ya diferida/reubicada
+            // en un ciclo SUSPENDIDO/CONDICIONAL anterior sobre esta misma fila.
+            filaOrigen['Ya_Diferido'] = false;
+            filaOrigen['Ya_Reubicado'] = false;
 
             // Eliminar el nodo completo de Firebase
             const rowKeyOrigenClean = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
@@ -986,9 +1005,14 @@ function imprimirDia(dayKey) {
                 console.log(`✅ Fila origen ${docId} eliminada de Firebase`);
             }
         } else {
-            // Si es SUSPENDIDO → preservar fila origen
-            console.log('🛑 Paciente SUSPENDIDO - preservando fila origen');
+            // Si es SUSPENDIDO → preservar fila origen. Se bloquean AMBOS
+            // botones (no solo Reubicar): evita que el paciente termine
+            // duplicado si además se difiere esta misma fila después de
+            // haber sido reubicada.
+            console.log('🛑 Paciente SUSPENDIDO - preservando fila origen (Diferir y Reubicar bloqueados)');
             const rowKeyOrigenClean = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
+            filaOrigen['Ya_Diferido'] = true;
+            filaOrigen['Ya_Reubicado'] = true;
             await guardarFilaEnFirebase(rowKeyOrigenClean, filaOrigen);
         }
 
@@ -998,7 +1022,7 @@ function imprimirDia(dayKey) {
         showModal({
             title: '✅ Paciente reubicado',
             message: `El paciente <strong>${filaDestinoData.Nombre_Paciente || 'sin nombre'}</strong> ha sido reubicado a:<br><br>📅 Semana ${semanaDestino + 1} - ${DIAS[diaDestino]}<br>🏥 ${pabNameDestino} - Fila ${filaDestino + 1}` +
-                (esSuspendido ? '<br><br>⚠️ El paciente está SUSPENDIDO, por lo que la fila original NO se eliminó.' : ''),
+                (esSuspendido ? `<br><br>⚠️ Por su estado (${filaOrigen['ESTADO_DE_IQx']}), la fila original NO se eliminó — los botones ⏩ y 🔄 de esa fila quedan bloqueados.` : ''),
             icon: '✅',
             confirmText: 'Aceptar'
         });

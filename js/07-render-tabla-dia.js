@@ -80,19 +80,40 @@ async function renderDayTable(dayData, semanaIdx, diaIdx) {
             html += `</td>`;
 
             // 📤 Columna de Diferir y 🔄 Columna de Reubicar
-            // ✅ Ambos botones se bloquean si ESTADO_DE_IQx tiene CUALQUIER condición seleccionada
-            // Solo se habilitan cuando ESTADO_DE_IQx está vacío ("Seleccione")
-            const estadoSeleccionado = !esEstadoVacio(fila['ESTADO_DE_IQx']);
-            const accionesDisabled = estadoSeleccionado ? 'disabled' : '';
-            const accionesStyle = estadoSeleccionado ? 'opacity:0.5; cursor:not-allowed;' : '';
-            const bloqueoSufijo = estadoSeleccionado ? ' (bloqueado: seleccione un ESTADO_DE_IQx vacío para habilitar)' : '';
+            // ✅ Regla general: ambos botones se bloquean si ESTADO_DE_IQx
+            // tiene CUALQUIER condición seleccionada, y se habilitan solo
+            // cuando está vacío ("Seleccione").
+            // ⚠️ Excepción: SUSPENDIDO y CONDICIONAL (NO OPERADO) sí permiten
+            // diferir/reubicar (el paciente permanece en la fila original,
+            // ver diferirFila()/reubicarPaciente() en js/08). Pero apenas se
+            // usa CUALQUIERA de los dos, se bloquean AMBOS para esa fila
+            // (Ya_Diferido/Ya_Reubicado se marcan juntos) — evita que el
+            // paciente termine duplicado (ej. diferido y reintegrado desde
+            // Pacientes Diferidos, y ADEMÁS reubicado desde la fila original).
+            const estadoActual = fila['ESTADO_DE_IQx'] || '';
+            const esCondicionEspecial = estadoActual === 'SUSPENDIDO' || estadoActual === 'CONDICIONAL (NO OPERADO)';
+            const estadoSeleccionado = !esEstadoVacio(estadoActual);
+
+            let diferirBloqueado, reubicarBloqueado, diferirSufijo, reubicarSufijo;
+            if (esCondicionEspecial) {
+                const yaUsado = !!(fila['Ya_Diferido'] || fila['Ya_Reubicado']);
+                diferirBloqueado = yaUsado;
+                reubicarBloqueado = yaUsado;
+                diferirSufijo = yaUsado ? ' (bloqueado: esta fila ya fue diferida o reubicada)' : ' (el paciente permanece en esta fila al diferir)';
+                reubicarSufijo = yaUsado ? ' (bloqueado: esta fila ya fue diferida o reubicada)' : ' (el paciente permanece en esta fila al reubicar)';
+            } else {
+                diferirBloqueado = estadoSeleccionado;
+                reubicarBloqueado = estadoSeleccionado;
+                diferirSufijo = estadoSeleccionado ? ' (bloqueado: seleccione un ESTADO_DE_IQx vacío para habilitar)' : '';
+                reubicarSufijo = diferirSufijo;
+            }
 
             html += `<td class="small-cell col-diferir" style="text-align:center; vertical-align:middle; min-width:35px;">`;
-            html += `<button class="btn-diferir" data-action="diferir" data-rowkey="${rowKey}" title="Diferir paciente${bloqueoSufijo}" ${accionesDisabled} style="${accionesStyle}">⏩</button>`;
+            html += `<button class="btn-diferir" data-action="diferir" data-rowkey="${rowKey}" title="Diferir paciente${diferirSufijo}" ${diferirBloqueado ? 'disabled' : ''} style="${diferirBloqueado ? 'opacity:0.5; cursor:not-allowed;' : ''}">⏩</button>`;
             html += `</td>`;
 
             html += `<td class="small-cell col-reubicar" style="text-align:center; vertical-align:middle; min-width:35px;">`;
-            html += `<button class="btn-reubicar" data-action="reubicar" data-rowkey="${rowKey}" title="Reubicar paciente en otra fila${bloqueoSufijo}" ${accionesDisabled} style="${accionesStyle}">🔄</button>`;
+            html += `<button class="btn-reubicar" data-action="reubicar" data-rowkey="${rowKey}" title="Reubicar paciente en otra fila${reubicarSufijo}" ${reubicarBloqueado ? 'disabled' : ''} style="${reubicarBloqueado ? 'opacity:0.5; cursor:not-allowed;' : ''}">🔄</button>`;
             html += `</td>`;
 
             for (const col of COLS) {
