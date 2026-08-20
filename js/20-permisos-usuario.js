@@ -14,6 +14,17 @@ const SECCIONES_APP = [
     { key: 'manual', label: '📖 Manual de Usuario' }
 ];
 
+// "Reunión de Tabla" y "Análisis IA" no son secciones navegables (abren un
+// modal, no cambian de pantalla) — van fuera de SECCIONES_APP para no
+// afectar obtenerPrimeraSeccionAccesible()/mostrarSinAccesoSecciones(), pero
+// se controlan con el mismo mecanismo (usuarios/{uid}.secciones), cada una
+// con su propio checkbox e independiente de si el usuario tiene o no acceso
+// a Estadísticas.
+const ACCESOS_ADICIONALES_APP = [
+    { key: 'reunionTabla', label: '🤝 Reunión de Tabla' },
+    { key: 'analisisIa', label: '🧠 Análisis IA' }
+];
+
 let currentUserSecciones = null;
 let currentUserSoloLecturaTabla = false;
 
@@ -54,11 +65,10 @@ function aplicarPermisosNavegacion() {
         const btn = document.getElementById(botonesPorSeccion[sec.key]);
         if (btn) btn.style.display = usuarioTieneAccesoSeccion(sec.key) ? '' : 'none';
     });
-    // "Reunión de Tabla" y "Análisis IA" combinan Tabla Quirúrgica +
-    // Estadísticas: solo tienen sentido si el usuario tiene acceso a ambas.
-    const accesoCombinado = usuarioTieneAccesoSeccion('registro') && usuarioTieneAccesoSeccion('estadisticas');
-    if (navReunionTabla) navReunionTabla.style.display = accesoCombinado ? '' : 'none';
-    if (navAnalisisIA) navAnalisisIA.style.display = accesoCombinado ? '' : 'none';
+    // Independientes entre sí y de Estadísticas: cada uno tiene su propio
+    // checkbox en "Editar Permisos" (ver ACCESOS_ADICIONALES_APP).
+    if (navReunionTabla) navReunionTabla.style.display = usuarioTieneAccesoSeccion('reunionTabla') ? '' : 'none';
+    if (navAnalisisIA) navAnalisisIA.style.display = usuarioTieneAccesoSeccion('analisisIa') ? '' : 'none';
 }
 
 function mostrarSinAccesoSecciones() {
@@ -114,6 +124,17 @@ function renderCheckboxesPermisos(seccionesActuales, soloLecturaActual) {
         const marcado = !seccionesActuales || seccionesActuales[sec.key] !== false;
         html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
             <input type="checkbox" class="chk-permiso-seccion" data-seccion="${sec.key}" ${marcado ? 'checked' : ''}> ${sec.label}
+        </label>`;
+    });
+
+    html += `</div>
+        <label style="font-size:0.8rem; font-weight:600; color:#475569; display:block; margin-top:12px; margin-bottom:6px;">Accesos adicionales (informes combinados desde el menú)</label>
+        <div style="display:flex; flex-direction:column; gap:6px; background:#f8fafc; border-radius:8px; padding:10px;">`;
+
+    ACCESOS_ADICIONALES_APP.forEach(acc => {
+        const marcado = !seccionesActuales || seccionesActuales[acc.key] !== false;
+        html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+            <input type="checkbox" class="chk-permiso-seccion" data-seccion="${acc.key}" ${marcado ? 'checked' : ''}> ${acc.label}
         </label>`;
     });
 
