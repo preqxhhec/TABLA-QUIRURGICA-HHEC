@@ -89,7 +89,8 @@ const ESTADISTICAS_PAGINAS = [
     { titulo: '🏨 Ocupación y Rendimiento Pabellón' },
     { titulo: '🩺 Tiempos por Intervención' },
     { titulo: '🤰 Perianalgesia (Parto) por Mes' },
-    { titulo: '🎯 Cumplimiento de Metas' }
+    { titulo: '🎯 Cumplimiento de Metas' },
+    { titulo: '⏱️ Horarios de Entrada/Salida AM/PM' }
 ];
 
 // Láminas compartidas por el modo Presentación (en la app) Y por el export a
@@ -107,7 +108,8 @@ const ESTADISTICAS_LAMINAS = [
     { titulo: '🚶 Proceso Ambulatorio — Desglose por Especialidad', pagina: 3, elementoId: 'estadisticasAmbDesgloseWrap', gridAncho: true, soloGraficos: true },
     { titulo: '🏨 Ocupación y Rendimiento Pabellón', pagina: 4, elementoId: 'estadisticasPagina_4', ocultarDisponibilidad: true },
     { titulo: '🤰 Perianalgesia (Parto) por Mes', pagina: 6, elementoId: 'estadisticasPagina_6' },
-    { titulo: '🎯 Cumplimiento de Metas', pagina: 7, elementoId: 'estadisticasPagina_7', gridMetas: true }
+    { titulo: '🎯 Cumplimiento de Metas', pagina: 7, elementoId: 'estadisticasPagina_7', gridMetas: true },
+    { titulo: '⏱️ Horarios de Entrada/Salida AM/PM', pagina: 8, elementoId: 'estadisticasPagina_8' }
 ];
 
 function laminaNecesitaModoCaptura(lamina) {
@@ -620,6 +622,15 @@ function renderEstadisticas() {
             <div id="estadisticasMetasContainer"></div>
         </div>
         </div>
+
+        <div class="estadisticas-pagina" id="estadisticasPagina_8">
+        <div style="background:#fafcff; border-radius:20px; border:1px solid #e2e8f0; padding:16px; margin-top:20px;">
+            <div style="font-size:1.3rem; font-weight:700; margin-bottom:12px; color:#0b2a4f;">
+                ⏱️ Horarios de Entrada/Salida AM/PM
+            </div>
+            <div id="estadisticasHorariosContainer"></div>
+        </div>
+        </div>
     `;
 
     inicializarFiltroFechaGlobalEstadisticas();
@@ -635,6 +646,7 @@ function renderEstadisticas() {
     renderEstadisticasIntervenciones();
     renderEstadisticasPerianalgesia();
     renderEstadisticasMetas();
+    renderEstadisticasHorarios();
 
     inicializarNavegacionPaginasEstadisticas();
     mostrarPaginaEstadisticas(estadisticasPaginaActual);
@@ -2793,6 +2805,69 @@ async function renderEstadisticasMetas() {
         produccionCmayPacientes: actualCmayPacientes,
         ambulatorizacion: actualAmbulatorizacion
     });
+}
+
+// =============================================================
+// ⏱️ HORARIOS DE ENTRADA/SALIDA AM/PM (por bloque, pabellón y especialidad)
+// Reutiliza los cálculos ya construidos para el Análisis IA (js/22-analisis-ia.js)
+// — calcularAnalisisHorariosLibro() / calcularComportamientoPorEspecialidad() /
+// construirFilasTablaHorarios() — para no duplicar esa lógica ("entrada más
+// temprana / salida más tardía por día", exclusión de suspendidas, etc.).
+// A diferencia del informe de Análisis IA (que es un snapshot puntual con su
+// propio rango de fechas), esta página usa el filtro de fecha global de
+// Estadísticas y se recalcula sola al cambiarlo, como el resto del dashboard.
+// =============================================================
+function construirTablaEstadisticasGenerica(titulo, headers, filas, colspanVacio) {
+    let html = `<div style="font-weight:700; font-size:1rem; color:#1e293b; margin:18px 0 8px 0;">${titulo}</div>`;
+    html += `<div class="stats-table-wrap"><table style="width:100%;"><thead><tr>`;
+    headers.forEach(h => { html += `<th>${h}</th>`; });
+    html += `</tr></thead><tbody>`;
+    if (filas.length === 0) {
+        html += `<tr><td colspan="${colspanVacio}" style="text-align:center; padding:24px; color:#94a3b8;">Sin datos suficientes en el rango seleccionado.</td></tr>`;
+    } else {
+        filas.forEach(fila => {
+            html += `<tr>${fila.map(c => `<td>${c}</td>`).join('')}</tr>`;
+        });
+    }
+    html += `</tbody></table></div>`;
+    return html;
+}
+
+function renderEstadisticasHorarios() {
+    const container = document.getElementById('estadisticasHorariosContainer');
+    if (!container) return;
+
+    const registrosFiltrados = filtrarRegistrosPorFechaEstadisticas(
+        estadisticasRegistros, estadisticasFiltroFechaInicio, estadisticasFiltroFechaFin
+    );
+
+    const analisisHorarios = calcularAnalisisHorariosLibro(registrosFiltrados);
+    const comportamientoEsp = calcularComportamientoPorEspecialidad(registrosFiltrados);
+
+    let html = construirTablaEstadisticasGenerica(
+        'Horarios de Entrada/Salida por Bloque' + (analisisHorarios.length > 1 ? ' y Pabellón' : ''),
+        ['Ámbito', 'Bloque', 'Días / Casos', 'Entrada Prom.', 'Salida Prom.', 'Atraso vs. Límite'],
+        construirFilasTablaHorarios(analisisHorarios), 6
+    );
+
+    if (comportamientoEsp.length) {
+        html += construirTablaEstadisticasGenerica(
+            'Producción y Ocupación por Especialidad (Solo Cirugías Electivas)',
+            ['Especialidad', 'Producción (casos)', 'Horas de Pabellón', '% del Tiempo Electivo Trabajado'],
+            comportamientoEsp.map(e => [e.especialidad, String(e.produccion), estadisticasFormatearHoras(e.horas), iaFmtPct(e.pctDelTotal)]),
+            4
+        );
+
+        html += construirTablaEstadisticasGenerica(
+            'Horarios de Bloque AM/PM por Especialidad (Solo Cirugías Electivas)',
+            ['Especialidad', 'Bloque', 'Días / Casos', 'Entrada Prom.', 'Salida Prom.', 'Atraso vs. Límite'],
+            construirFilasTablaHorarios(comportamientoEsp.map(e => ({ clave: e.especialidad, am: e.am, pm: e.pm }))), 6
+        );
+    } else {
+        html += `<p style="color:#94a3b8; text-align:center; padding:20px;">No hay cirugías electivas en el rango seleccionado para desglosar por especialidad.</p>`;
+    }
+
+    container.innerHTML = html;
 }
 
 function renderTarjetaMeta(key, titulo, config, actual, esAdmin, esPorcentaje, color) {
