@@ -478,12 +478,12 @@
     // ⚙️ ADMINISTRADOR - PANEL DE CONTROL
     // =============================================================
     async function cargarAdmin() {
-        if (currentUserRol !== 'administrador') {
+        if (!esSuperAdministrador()) {
             adminContent.innerHTML = `
                 <div style="text-align:center; padding:40px; color:#dc2626;">
                     <p style="font-size:3rem; margin-bottom:10px;">⛔</p>
                     <p style="font-size:1.2rem; font-weight:600;">Acceso denegado</p>
-                    <p style="color:#64748b;">Solo los administradores pueden acceder a esta sección.</p>
+                    <p style="color:#64748b;">Solo el superadministrador puede acceder a esta sección.</p>
                 </div>
             `;
             return;

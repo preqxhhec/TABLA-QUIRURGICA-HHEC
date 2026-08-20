@@ -134,7 +134,7 @@ function obtenerOpcionesCache(key) {
         });
         return;
     }
-    if (currentUserRol !== 'administrador') {
+    if (!esAdministrador()) {
         showModal({
             title: '⛔ Acceso denegado',
             message: 'Solo los administradores pueden registrar definitivamente.<br><br>Contacta al administrador del sistema.',

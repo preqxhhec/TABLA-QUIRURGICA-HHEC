@@ -2163,7 +2163,7 @@ async function renderEstadisticasOcup() {
     const kpis = calcularKpisOcupacion(registrosFiltrados, diasHabiles);
     const kpisInhabil = calcularKpisHorarioInhabil(registrosFiltrados);
 
-    const esAdmin = currentUserRol === 'administrador';
+    const esAdmin = esAdministrador();
 
     const azul = { fondo: '#eef4ff', borde: '#c7d9f7', texto: '#1d4c8f', valor: '#0b2a4f' };
     const rojo = { fondo: '#fdecec', borde: '#f5c2c2', texto: '#8a1f1f', valor: '#c0392b' };
@@ -2785,7 +2785,7 @@ async function renderEstadisticasMetas() {
     const actualCmayPacientes = calcularProduccionCmayPacientesAnio(estadisticasMetas.produccionCmayPacientes.anio);
     const actualAmbulatorizacion = calcularAmbulatorizacionAnio(estadisticasMetas.ambulatorizacion.anio);
 
-    const esAdmin = currentUserRol === 'administrador';
+    const esAdmin = esAdministrador();
 
     container.innerHTML = `
         <div id="estadisticasMetasGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">

@@ -54,10 +54,11 @@
                             <select class="cambiar-rol" data-uid="${uid}" style="padding:4px 8px; border:1px solid #d1d9e6; border-radius:4px; font-size:0.75rem; ${esUsuarioActual ? 'disabled' : ''}">
                                 <option value="usuario" ${rol === 'usuario' ? 'selected' : ''}>Usuario</option>
                                 <option value="administrador" ${rol === 'administrador' ? 'selected' : ''}>Administrador</option>
+                                <option value="superadministrador" ${rol === 'superadministrador' ? 'selected' : ''}>👑 Superadministrador</option>
                             </select>
                         </td>
                         <td style="padding:8px 10px; text-align:center;">
-                            ${esUsuarioActual ? 
+                            ${esUsuarioActual ?
                                 '<span style="color:#64748b;">-</span>' :
                                 `<button class="btn-toggle-estado" data-uid="${uid}" data-activo="${activo}" style="padding:4px 12px; border:none; border-radius:20px; cursor:pointer; font-size:0.7rem; font-weight:500; ${activo ? 'background:#dcfce7; color:#166534;' : 'background:#fee2e2; color:#991b1b;'}">
                                     ${activo ? '✅ Activo' : '❌ Bloqueado'}
@@ -65,12 +66,13 @@
                             }
                         </td>
                         <td style="padding:8px 10px; text-align:center;">
-                            ${rol === 'administrador' ?
+                            ${rol === 'administrador' || rol === 'superadministrador' ?
                                 '<span style="color:#94a3b8; font-size:0.7rem;">Acceso total</span>' :
                                 `<button class="btn-editar-permisos" data-uid="${uid}" style="background:transparent; border:1px solid #1a6d8a; border-radius:4px; padding:2px 10px; cursor:pointer; color:#1a6d8a; font-size:0.75rem;">🔐 Permisos</button>`
                             }
                         </td>
-                        <td style="padding:8px 10px; text-align:center;">
+                        <td style="padding:8px 10px; text-align:center; white-space:nowrap;">
+                            <button class="btn-ver-bitacora" data-uid="${uid}" data-email="${email}" title="Ver bitácora de accesos" style="background:transparent; border:1px solid #64748b; border-radius:4px; padding:2px 8px; cursor:pointer; color:#64748b; font-size:0.8rem; margin-right:4px;">🕐</button>
                             ${esUsuarioActual ?
                                 '<span style="color:#94a3b8; font-size:0.7rem;">No puedes modificarte</span>' :
                                 `<button class="btn-eliminar-usuario" data-uid="${uid}" data-email="${email}" style="background:transparent; border:1px solid #ef4444; border-radius:4px; padding:2px 8px; cursor:pointer; color:#ef4444; font-size:0.8rem;">🗑️</button>`
@@ -120,6 +122,14 @@
                 });
             });
 
+            document.querySelectorAll('.btn-ver-bitacora').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const uid = this.dataset.uid;
+                    const email = this.dataset.email;
+                    mostrarBitacoraUsuario(uid, email);
+                });
+            });
+
         } catch (error) {
             console.error('❌ Error al cargar usuarios:', error);
             contenedor.innerHTML = `
@@ -129,10 +139,10 @@
     }
 
     async function cambiarRolUsuario(uid, nuevoRol) {
-        if (!currentUser || currentUserRol !== 'administrador') {
+        if (!currentUser || !esSuperAdministrador()) {
             showModal({
                 title: '⛔ Acceso denegado',
-                message: 'Solo los administradores pueden cambiar roles.',
+                message: 'Solo el superadministrador puede cambiar roles.',
                 icon: '⛔',
                 confirmText: 'Aceptar'
             });
@@ -160,10 +170,10 @@
     }
 
     async function toggleEstadoUsuario(uid, estadoActual) {
-        if (!currentUser || currentUserRol !== 'administrador') {
+        if (!currentUser || !esSuperAdministrador()) {
             showModal({
                 title: '⛔ Acceso denegado',
-                message: 'Solo los administradores pueden bloquear/activar usuarios.',
+                message: 'Solo el superadministrador puede bloquear/activar usuarios.',
                 icon: '⛔',
                 confirmText: 'Aceptar'
             });
@@ -204,11 +214,78 @@
         }
     }
 
+    // =============================================================
+    // 🕐 BITÁCORA DE ACCESOS — muestra los últimos inicios de sesión de un
+    // usuario (guardados en bitacora_accesos/{uid} por
+    // registrarInicioSesionBitacora() en js/15-navegacion-y-autenticacion.js).
+    // =============================================================
+    async function mostrarBitacoraUsuario(uid, email) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box" style="max-width:520px; text-align:left;">
+                <span class="modal-icon" style="text-align:center; display:block;">🕐</span>
+                <div class="modal-title" style="text-align:center;">Bitácora de Accesos</div>
+                <div class="modal-message" style="text-align:center; margin-bottom:12px;">${email}</div>
+                <div id="bitacoraListaWrap" style="max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; padding:4px;">
+                    <p style="text-align:center; color:#94a3b8; padding:20px;">⏳ Cargando...</p>
+                </div>
+                <div class="modal-actions" style="margin-top:16px;">
+                    <button class="modal-btn modal-btn-cancel" id="bitacoraCerrar">Cerrar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#bitacoraCerrar').addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.remove();
+        });
+
+        const wrap = overlay.querySelector('#bitacoraListaWrap');
+        try {
+            const snapshot = await database.ref('bitacora_accesos/' + uid).limitToLast(50).once('value');
+            const data = snapshot.val();
+
+            if (!data) {
+                wrap.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Sin registros de acceso todavía.</p>';
+                return;
+            }
+
+            const entradas = Object.values(data).sort((a, b) => (b.fecha_hora || 0) - (a.fecha_hora || 0));
+
+            let html = `<table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e2e8f0;">Fecha y hora</th>
+                        <th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e2e8f0;">Dispositivo</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            entradas.forEach(entrada => {
+                const fecha = entrada.fecha_hora ? new Date(entrada.fecha_hora).toLocaleString('es-CL') : '—';
+                const dispositivo = entrada.dispositivo || '—';
+                const dispositivoCorto = dispositivo.length > 55 ? dispositivo.slice(0, 55) + '…' : dispositivo;
+                html += `<tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:6px 8px; white-space:nowrap;">${fecha}</td>
+                    <td style="padding:6px 8px; color:#64748b;" title="${dispositivo.replace(/"/g, '&quot;')}">${dispositivoCorto}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            wrap.innerHTML = html;
+
+        } catch (error) {
+            console.error('❌ Error al cargar la bitácora de accesos:', error);
+            wrap.innerHTML = '<p style="text-align:center; color:#dc2626; padding:20px;">Error al cargar la bitácora.</p>';
+        }
+    }
+
     async function eliminarUsuario(uid, email) {
-        if (!currentUser || currentUserRol !== 'administrador') {
+        if (!currentUser || !esSuperAdministrador()) {
             showModal({
                 title: '⛔ Acceso denegado',
-                message: 'Solo los administradores pueden eliminar usuarios.',
+                message: 'Solo el superadministrador puede eliminar usuarios.',
                 icon: '⛔',
                 confirmText: 'Aceptar'
             });
@@ -268,6 +345,7 @@
                     <select id="nuevoUsuarioRol" style="width:100%; padding:10px 12px; border:2px solid #e2e8f0; border-radius:8px; font-size:0.95rem; box-sizing:border-box;">
                         <option value="usuario">Usuario</option>
                         <option value="administrador">Administrador</option>
+                        <option value="superadministrador">👑 Superadministrador</option>
                     </select>
 
                     <div id="nuevoUsuarioPermisosWrap">
@@ -294,7 +372,7 @@
         const permisosWrap = overlay.querySelector('#nuevoUsuarioPermisosWrap');
 
         function actualizarVisibilidadPermisos() {
-            permisosWrap.style.display = rolSelect.value === 'administrador' ? 'none' : 'block';
+            permisosWrap.style.display = (rolSelect.value === 'administrador' || rolSelect.value === 'superadministrador') ? 'none' : 'block';
         }
         actualizarVisibilidadPermisos();
         rolSelect.addEventListener('change', actualizarVisibilidadPermisos);
@@ -437,10 +515,10 @@
     }
 
     async function guardarPermisosUsuario(uid, secciones, soloLecturaTabla) {
-        if (!currentUser || currentUserRol !== 'administrador') {
+        if (!currentUser || !esSuperAdministrador()) {
             showModal({
                 title: '⛔ Acceso denegado',
-                message: 'Solo los administradores pueden editar permisos.',
+                message: 'Solo el superadministrador puede editar permisos.',
                 icon: '⛔',
                 confirmText: 'Aceptar'
             });

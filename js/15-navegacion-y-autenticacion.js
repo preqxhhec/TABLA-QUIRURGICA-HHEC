@@ -97,13 +97,22 @@
     }
 
     // =============================================================
-    // 🛡️ VERIFICAR SI EL USUARIO ES ADMINISTRADOR
+    // 🛡️ VERIFICAR SI EL USUARIO ES ADMINISTRADOR / SUPERADMINISTRADOR
+    // El superadministrador conserva TODO lo que ya podía hacer un
+    // administrador (por eso esAdministrador() es true para ambos) — lo
+    // único exclusivo del superadministrador es el panel Administrador en
+    // sí (ver usuarioTieneAccesoSeccion('admin') en js/20-permisos-usuario.js
+    // y cargarAdmin() en js/09-diferidos-libro-admin.js).
     // =============================================================
     function esAdministrador() {
         if (typeof currentUserRol === 'undefined' || !currentUserRol) {
             return false;
         }
-        return currentUserRol === 'administrador';
+        return currentUserRol === 'administrador' || currentUserRol === 'superadministrador';
+    }
+
+    function esSuperAdministrador() {
+        return currentUserRol === 'superadministrador';
     }
 
     // =============================================================
@@ -220,6 +229,23 @@
         }
     });
 
+    // =============================================================
+    // 🕐 BITÁCORA DE ACCESOS — un registro por cada inicio de sesión exitoso,
+    // guardado en bitacora_accesos/{uid}. Se consulta desde Administrador
+    // (ver mostrarBitacoraUsuario() en js/11-admin-usuarios.js).
+    // =============================================================
+    async function registrarInicioSesionBitacora(uid, email) {
+        try {
+            await database.ref('bitacora_accesos/' + uid).push({
+                email: email || '',
+                fecha_hora: firebase.database.ServerValue.TIMESTAMP,
+                dispositivo: (typeof navigator !== 'undefined' && navigator.userAgent) || ''
+            });
+        } catch (error) {
+            console.error('❌ Error al registrar en la bitácora de accesos:', error);
+        }
+    }
+
     auth.onAuthStateChanged(async function(user) {
         if (user) {
             currentUser = user;
@@ -229,13 +255,51 @@
             const snapshot = await userRef.once('value');
             const userData = snapshot.val();
 
+            // 🔒 Usuario bloqueado por un administrador (usuarios/{uid}.activo
+            // === false, ver toggleEstadoUsuario() en js/11): sus credenciales
+            // de Firebase siguen siendo válidas, pero la app le niega el
+            // acceso igual — se cierra la sesión de inmediato, antes de
+            // mostrar nada de la app.
+            if (userData && userData.activo === false) {
+                console.warn('⛔ Usuario bloqueado, cerrando sesión:', currentUserEmail);
+                await auth.signOut();
+                currentUser = null;
+                currentUserEmail = '';
+                currentUserRol = '';
+                mostrarLoginStatus('⛔ Tu cuenta ha sido bloqueada. Contacta al administrador del sistema.', 'error');
+                return;
+            }
+
+            // 🕐 Bitácora de inicio de sesión — no bloquea el login si falla.
+            registrarInicioSesionBitacora(user.uid, currentUserEmail);
+
             if (userData && userData.rol) {
                 currentUserRol = userData.rol;
             } else {
-                // Usuario nuevo sin rol asignado: se crea con rol por defecto
-                // (misma lógica que antes vivía duplicada en iniciarSesion()).
-                currentUserRol = 'usuario';
-                await userRef.update({ rol: 'usuario', email: currentUserEmail });
+                // Usuario nuevo sin rol asignado. Caso especial: si la app está
+                // recién instalada y todavía no existe NINGÚN superadministrador,
+                // la primera persona en iniciar sesión se convierte
+                // automáticamente en superadministrador, para poder arrancar
+                // sin depender de editar Firebase a mano. Una vez que exista
+                // al menos un superadministrador, los siguientes usuarios
+                // nuevos vuelven a crearse con rol "usuario" como siempre.
+                let rolInicial = 'usuario';
+                try {
+                    const superadminSnapshot = await database.ref('usuarios')
+                        .orderByChild('rol')
+                        .equalTo('superadministrador')
+                        .limitToFirst(1)
+                        .once('value');
+                    if (!superadminSnapshot.exists()) {
+                        rolInicial = 'superadministrador';
+                        console.log('👑 No hay superadministrador todavía — asignando automáticamente a', currentUserEmail);
+                    }
+                } catch (error) {
+                    console.error('❌ No se pudo verificar si existe un superadministrador (se usará rol "usuario"):', error);
+                }
+
+                currentUserRol = rolInicial;
+                await userRef.update({ rol: rolInicial, email: currentUserEmail });
             }
 
             // secciones === null (campo nunca definido) se interpreta como

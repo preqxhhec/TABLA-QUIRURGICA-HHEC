@@ -127,10 +127,10 @@
     }
 
     async function agregarOpcionDesplegable(key, valor) {
-    if (!currentUser || currentUserRol !== 'administrador') {
+    if (!currentUser || !esSuperAdministrador()) {
         showModal({
             title: '⛔ Acceso denegado',
-            message: 'Solo los administradores pueden modificar desplegables.',
+            message: 'Solo el superadministrador puede modificar desplegables.',
             icon: '⛔',
             confirmText: 'Aceptar'
         });
@@ -184,10 +184,10 @@
 }
 
     async function eliminarOpcionDesplegable(key, opcion) {
-    if (!currentUser || currentUserRol !== 'administrador') {
+    if (!currentUser || !esSuperAdministrador()) {
         showModal({
             title: '⛔ Acceso denegado',
-            message: 'Solo los administradores pueden modificar desplegables.',
+            message: 'Solo el superadministrador puede modificar desplegables.',
             icon: '⛔',
             confirmText: 'Aceptar'
         });

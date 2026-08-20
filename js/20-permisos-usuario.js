@@ -28,13 +28,16 @@ const ACCESOS_ADICIONALES_APP = [
 let currentUserSecciones = null;
 let currentUserSoloLecturaTabla = false;
 
-// Los administradores nunca están restringidos. "admin" no es una sección
-// configurable — solo el rol determina el acceso a ella. Para el resto,
-// `currentUserSecciones === null` es el caso de compatibilidad (usuarios
-// creados antes de este sistema, sin el campo): acceso total por defecto.
+// Los administradores nunca están restringidos, EXCEPTO en "admin": el
+// panel Administrador es exclusivo del superadministrador — un
+// administrador normal ahora tiene acceso a todo lo demás, pero no a este
+// panel. "admin" no es una sección configurable — solo el rol determina el
+// acceso a ella. Para el resto, `currentUserSecciones === null` es el caso
+// de compatibilidad (usuarios creados antes de este sistema, sin el
+// campo): acceso total por defecto.
 function usuarioTieneAccesoSeccion(seccion) {
+    if (seccion === 'admin') return esSuperAdministrador();
     if (esAdministrador()) return true;
-    if (seccion === 'admin') return false;
     if (!currentUserSecciones) return true;
     return currentUserSecciones[seccion] !== false;
 }
