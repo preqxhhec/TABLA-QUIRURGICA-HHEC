@@ -3,27 +3,37 @@
 // =============================================================
 // 📖 MANUAL DE USUARIO - EBOOK
 // =============================================================
+
+// Índice del manual — módulo (no dentro de cargarManual) para que también
+// lo use descargarManualPDF() al armar el PDF con índice clicable.
+const MANUAL_SECCIONES = [
+    { id: 'introduccion', titulo: '1. Introducción', icono: '📋' },
+    { id: 'acceso', titulo: '2. Acceso al Sistema', icono: '🔐' },
+    { id: 'panel-principal', titulo: '3. Panel Principal - Tabla Quirúrgica', icono: '📊' },
+    { id: 'columnas', titulo: '3.1 Columnas de la Tabla', icono: '📋' },
+    { id: 'estados', titulo: '3.2 Estados de ESTADO_DE_IQx', icono: '📊' },
+    { id: 'botones', titulo: '3.3 Botones de Acción', icono: '🔘' },
+    { id: 'presentacion-tabla', titulo: '3.4 Presentación y Descargar PPT', icono: '🎥' },
+    { id: 'diferidos', titulo: '4. Pacientes Diferidos', icono: '📤' },
+    { id: 'libro', titulo: '5. Libro de Quirófano', icono: '📘' },
+    { id: 'estadisticas-manual', titulo: '6. Estadísticas', icono: '📊' },
+    { id: 'reunion-tabla', titulo: '6.5 Reunión de Tabla', icono: '🤝' },
+    { id: 'analisis-ia', titulo: '6.6 Análisis IA', icono: '🧠' },
+    { id: 'admin', titulo: '7. Panel de Administración', icono: '⚙️' },
+    { id: 'avanzadas', titulo: '8. Funciones Avanzadas', icono: '🚀' },
+    { id: 'problemas', titulo: '9. Solución de Problemas', icono: '🔧' },
+    { id: 'faq', titulo: '10. Preguntas Frecuentes', icono: '❓' }
+];
+
+// Se llena con TODO el contenido (todas las secciones) la primera vez que
+// corre cargarContenidoManual() — ver ahí. descargarManualPDF() lo usa para
+// armar el PDF completo sin duplicar los ~600 líneas de contenido HTML.
+let MANUAL_CONTENIDOS = {};
+
 function cargarManual() {
     const indiceLista = document.getElementById('manualIndiceLista');
     const contenidoInner = document.getElementById('manualContenidoInner');
-
-    // Definir secciones del manual
-    const secciones = [
-        { id: 'introduccion', titulo: '1. Introducción', icono: '📋' },
-        { id: 'acceso', titulo: '2. Acceso al Sistema', icono: '🔐' },
-        { id: 'panel-principal', titulo: '3. Panel Principal - Tabla Quirúrgica', icono: '📊' },
-        { id: 'columnas', titulo: '3.1 Columnas de la Tabla', icono: '📋' },
-        { id: 'estados', titulo: '3.2 Estados de ESTADO_DE_IQx', icono: '📊' },
-        { id: 'botones', titulo: '3.3 Botones de Acción', icono: '🔘' },
-        { id: 'presentacion-tabla', titulo: '3.4 Presentación y Descargar PPT', icono: '🎥' },
-        { id: 'diferidos', titulo: '4. Pacientes Diferidos', icono: '📤' },
-        { id: 'libro', titulo: '5. Libro de Quirófano', icono: '📘' },
-        { id: 'estadisticas-manual', titulo: '6. Estadísticas', icono: '📊' },
-        { id: 'admin', titulo: '7. Panel de Administración', icono: '⚙️' },
-        { id: 'avanzadas', titulo: '8. Funciones Avanzadas', icono: '🚀' },
-        { id: 'problemas', titulo: '9. Solución de Problemas', icono: '🔧' },
-        { id: 'faq', titulo: '10. Preguntas Frecuentes', icono: '❓' }
-    ];
+    const secciones = MANUAL_SECCIONES;
 
     // Generar índice
     let indiceHTML = '';
@@ -60,15 +70,22 @@ function cargarManual() {
     if (primerItem) {
         primerItem.click();
     }
+
+    const btnPDF = document.getElementById('btnDescargarManualPDF');
+    if (btnPDF && !btnPDF.dataset._listener) {
+        btnPDF.dataset._listener = 'true';
+        btnPDF.addEventListener('click', descargarManualPDF);
+    }
 }
 
 // =============================================================
 // 📖 CARGAR CONTENIDO DEL MANUAL
 // =============================================================
-function cargarContenidoManual(seccionId) {
-    const contenidoInner = document.getElementById('manualContenidoInner');
-    
-    const contenidos = {
+// Puebla MANUAL_CONTENIDOS con el HTML de TODAS las secciones (no solo una).
+// Función propia — separada de cargarContenidoManual() — para que
+// descargarManualPDF() pueda llamarla sin tocar lo que se ve en pantalla.
+function construirManualContenidos() {
+    MANUAL_CONTENIDOS = {
         'introduccion': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">📋 Manual de Usuario - Tabla Quirúrgica</h1>
             <p style="font-size:1.1rem; color:#475569; margin-bottom:24px;">Hospital Dr. Humberto Elorza Cortés · Illapel, Chile</p>
@@ -466,6 +483,44 @@ function cargarContenidoManual(seccionId) {
             </ul>
         `,
 
+        'reunion-tabla': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🤝 Reunión de Tabla</h1>
+            <p style="color:#475569; line-height:1.7; margin-bottom:16px;">Genera, en un solo archivo, una presentación combinada que integra láminas de <strong>Estadísticas</strong> (según un rango de fechas) y láminas de la <strong>Tabla Quirúrgica</strong> (según una semana), pensada para exponer en una reunión de tabla sin tener que armar dos presentaciones por separado.</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.5.1 Cómo generarla</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Abre el menú 🍔 (hamburguesa) y selecciona <strong>"🤝 Reunión de Tabla"</strong></li>
+                <li>Elige el <strong>rango de fechas</strong> para las láminas de Estadísticas a incluir</li>
+                <li>Elige la <strong>semana</strong> de la Tabla Quirúrgica a incluir</li>
+                <li>Marca qué láminas de cada bloque quieres incluir</li>
+                <li>Genera la presentación en pantalla completa, o descárgala como archivo <strong>.pptx</strong></li>
+            </ol>
+            <p style="color:#64748b; font-style:italic;">💡 Usa la misma lógica de captura de láminas que "Presentación"/"Descargar PPT" de Estadísticas y de Tabla Quirúrgica — no crea datos nuevos, solo las combina en un archivo.</p>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Solo aparece en el menú si tu cuenta tiene habilitado el acceso a "Reunión de Tabla" (ver 7.4)</p>
+        `,
+
+        'analisis-ia': `
+            <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">🧠 Análisis IA</h1>
+            <p style="color:#475569; line-height:1.7; margin-bottom:16px;">Genera un informe ejecutivo automático a partir de los datos ya cargados en la aplicación (Libro de Quirófano y Estadísticas), enfocado en productividad, ocupación de pabellón, tiempos muertos y horarios de inicio/término AM/PM, con conclusiones, recomendaciones, plan de mejora y metas sugeridas.</p>
+            <p style="color:#64748b; font-style:italic; margin-bottom:16px;">💡 El análisis se genera con reglas internas de la aplicación sobre tus propios datos (no envía información a ningún servicio externo de inteligencia artificial).</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.6.1 Cómo generarlo</h2>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li>Abre el menú 🍔 (hamburguesa) y selecciona <strong>"🧠 Análisis IA"</strong></li>
+                <li>Elige el <strong>rango de fechas</strong> a analizar (aplica tanto al Libro de Quirófano como a los bloques de Estadísticas)</li>
+                <li>Marca los <strong>bloques de Estadísticas</strong> que quieras incluir en el informe (opcional)</li>
+                <li>Haz clic en <strong>"👁️ Generar Vista Previa"</strong> para revisar el informe antes de descargarlo</li>
+            </ol>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">6.6.2 Formatos de descarga</h2>
+            <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
+                <li><strong>📄 Texto / PDF</strong>: abre una ventana lista para imprimir o guardar como PDF</li>
+                <li><strong>📝 Word</strong>: descarga un archivo .doc con el mismo contenido e imágenes</li>
+                <li><strong>⬇️ PPT</strong>: descarga una presentación .pptx con gráficos y tablas</li>
+            </ul>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Solo aparece en el menú si tu cuenta tiene habilitado el acceso a "Análisis IA" (ver 7.4)</p>
+        `,
+
         'admin': `
             <h1 style="font-size:1.8rem; color:#0b2a4f; margin-bottom:16px;">⚙️ Panel de Administración</h1>
 
@@ -474,7 +529,8 @@ function cargarContenidoManual(seccionId) {
                 <li>Haz clic en el menú 🍔 (hamburguesa)</li>
                 <li>Selecciona <strong>"⚙️ Administrador"</strong></li>
             </ol>
-            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Esta sección solo está disponible para usuarios con rol <strong>Administrador</strong></p>
+            <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Esta sección solo está disponible para usuarios con rol <strong>Superadministrador</strong>. Un <strong>Administrador</strong> tiene acceso total al resto de la aplicación, pero no puede entrar al Panel de Administración</p>
+            <p style="color:#64748b; font-style:italic; margin-top:8px;">💡 Si la aplicación se instala desde cero (sin ningún usuario todavía), la primera persona en iniciar sesión se convierte automáticamente en superadministrador.</p>
 
             <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.2 Gestión de Usuarios</h2>
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:16px;">
@@ -486,25 +542,28 @@ function cargarContenidoManual(seccionId) {
                 </thead>
                 <tbody>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Crear Usuario</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Agrega un nuevo usuario al sistema</td></tr>
-                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambiar Rol</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Asigna rol (Usuario / Administrador)</td></tr>
-                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquear/Activar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquea o activa el acceso de un usuario</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambiar Rol</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Asigna rol (Usuario / Administrador / 👑 Superadministrador)</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquear/Activar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Bloquea o activa el acceso de un usuario. Un usuario bloqueado no puede iniciar sesión mientras dure el bloqueo, aunque su contraseña siga siendo correcta</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🕐 Bitácora</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Muestra los últimos inicios de sesión de ese usuario: fecha, hora y dispositivo</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">🔐 Permisos</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Edita las secciones a las que accede un usuario y el modo solo lectura (ver 7.4)</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">Eliminar</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Elimina un usuario del sistema</td></tr>
                 </tbody>
             </table>
+            <p style="color:#64748b; font-style:italic; margin-top:8px;">💡 Puede haber más de un superadministrador. Cualquier superadministrador puede ascender o degradar el rol de otro usuario, incluso convertir a otro en superadministrador — con la única excepción de que nadie puede modificar su propio rol.</p>
 
             <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.3 Crear Usuario</h2>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
                 <li>Haz clic en <strong>"+ Crear Usuario"</strong></li>
                 <li>Completa los campos: <strong>Correo electrónico</strong>, <strong>Contraseña</strong> y <strong>Rol</strong></li>
-                <li>Si el rol es <strong>Usuario</strong>, marca las secciones a las que podrá acceder y, si corresponde, el modo solo lectura (ver 7.4). Si el rol es <strong>Administrador</strong>, estas opciones no aparecen porque el acceso ya es total</li>
+                <li>Si el rol es <strong>Usuario</strong>, marca las secciones a las que podrá acceder y, si corresponde, el modo solo lectura (ver 7.4). Si el rol es <strong>Administrador</strong> o <strong>Superadministrador</strong>, estas opciones no aparecen porque el acceso ya es total</li>
                 <li>Haz clic en <strong>"✅ Crear"</strong></li>
             </ol>
 
             <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.4 Permisos de Usuario</h2>
-            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Los administradores siempre tienen acceso completo a toda la aplicación — esto no se puede restringir. Para usuarios con rol <strong>Usuario</strong> se puede configurar, al crearlos o después desde el botón <strong>"🔐 Permisos"</strong> en la lista de usuarios:</p>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Los administradores y superadministradores siempre tienen acceso completo a toda la aplicación — esto no se puede restringir. Para usuarios con rol <strong>Usuario</strong> se puede configurar, al crearlos o después desde el botón <strong>"🔐 Permisos"</strong> en la lista de usuarios:</p>
             <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:12px;">
                 <li><strong>Secciones accesibles</strong>: Tabla Quirúrgica, Pacientes Diferidos, Libro de Quirófano, Estadísticas y Manual de Usuario. Las secciones no marcadas desaparecen del menú de ese usuario; si intenta entrar igual, se le deniega el acceso</li>
+                <li><strong>Accesos adicionales</strong>: "Reunión de Tabla" y "Análisis IA" (ver 6.5 y 6.6) se habilitan por separado, de forma independiente al acceso a Estadísticas — un usuario puede tener Estadísticas sin estas funciones, o al revés</li>
                 <li><strong>Solo lectura en Tabla Quirúrgica</strong>: el usuario puede navegar semanas y días e Imprimir Día, pero no puede editar campos, agregar/eliminar filas, guardar, limpiar, registrar día, diferir, reubicar, cambiar colores, ni usar Presentación/Descargar PPT de esa sección</li>
             </ul>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Los permisos se pueden editar todas las veces que sea necesario, y los cambios se aplican la próxima vez que ese usuario inicie sesión (o al recargar la página si ya la tiene abierta).</p>
@@ -517,6 +576,7 @@ function cargarContenidoManual(seccionId) {
                 <li><strong>ESTADO DE IQx</strong>: Estados de intervención</li>
                 <li><strong>DESTINO</strong>: Destinos del paciente</li>
                 <li><strong>Especialidad</strong>: Especialidades médicas</li>
+                <li><strong>Anestesista</strong>: Lista de anestesistas (independiente de la especialidad)</li>
             </ul>
             <p style="color:#475569; line-height:1.7; margin-bottom:8px;"><strong>Agregar una opción:</strong></p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
@@ -528,6 +588,15 @@ function cargarContenidoManual(seccionId) {
                 <li>Haz clic en <strong>"✕"</strong> junto a la opción que deseas eliminar</li>
             </ol>
             <p style="color:#dc2626; font-size:0.9rem; margin-top:8px;">⚠️ Eliminar una opción puede afectar registros existentes</p>
+
+            <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">7.6 Médicos por Especialidad (campo Cirujano)</h2>
+            <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El campo <strong>Cirujano</strong> de la Tabla Quirúrgica es un desplegable que carga los médicos según la <strong>Especialidad</strong> elegida en esa misma fila. Cada especialidad tiene su propia lista de médicos, administrada por separado en <strong>"👨‍⚕️ Médicos por Especialidad"</strong>:</p>
+            <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
+                <li>Elige la especialidad en el selector</li>
+                <li>Escribe el nombre del médico y haz clic en <strong>"+"</strong> para agregarlo</li>
+                <li>Haz clic en <strong>"✕"</strong> junto a un médico para eliminarlo de esa especialidad</li>
+            </ol>
+            <p style="color:#64748b; font-style:italic; margin-top:8px;">💡 Si cambias la Especialidad de una fila, el campo Cirujano de esa fila se reinicia para que elijas un médico de la nueva lista.</p>
         `,
         
         'avanzadas': `
@@ -536,8 +605,8 @@ function cargarContenidoManual(seccionId) {
             <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.1 Guardado Automático</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">El sistema guarda automáticamente los datos de dos maneras:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
-                <li><strong>Debounce (30 segundos)</strong>: Después de 30 segundos sin escribir, se guarda automáticamente</li>
-                <li><strong>Intervalo (10 minutos)</strong>: Cada 10 minutos se guarda automáticamente</li>
+                <li><strong>Debounce (60 segundos)</strong>: Después de 60 segundos sin escribir, se guarda automáticamente. Este guardado nunca se salta por falta de FECHA</li>
+                <li><strong>Intervalo (10 minutos)</strong>: Cada 10 minutos se guarda automáticamente. Si hay filas con datos de paciente pero sin FECHA, muestra una alerta recordatorio (sin dejar de guardar)</li>
             </ol>
             <p style="color:#64748b; font-style:italic;">💡 Puedes ver los guardados automáticos en la consola del navegador (F12)</p>
             
@@ -659,7 +728,7 @@ location.reload();</pre>
             
             <div style="margin-bottom:20px;">
                 <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Qué hago si cierro la página sin guardar?</h3>
-                <p style="color:#475569; line-height:1.7;">El sistema tiene guardado automático cada 30 segundos, por lo que la mayoría de los datos ya estarán guardados.</p>
+                <p style="color:#475569; line-height:1.7;">El sistema tiene guardado automático 60 segundos después del último cambio, por lo que la mayoría de los datos ya estarán guardados.</p>
             </div>
             
             <div style="margin-bottom:20px;">
@@ -697,9 +766,14 @@ location.reload();</pre>
             </div>
         `
     };
+}
+
+function cargarContenidoManual(seccionId) {
+    const contenidoInner = document.getElementById('manualContenidoInner');
+    construirManualContenidos();
 
     // Obtener el contenido de la sección seleccionada
-    const contenido = contenidos[seccionId] || `
+    const contenido = MANUAL_CONTENIDOS[seccionId] || `
         <p style="color:#94a3b8; text-align:center; padding:60px 20px; font-size:1.1rem;">
             Contenido no disponible
         </p>
@@ -711,5 +785,117 @@ location.reload();</pre>
     const contenedor = document.getElementById('manualContenido');
     if (contenedor) {
         contenedor.scrollTop = 0;
+    }
+}
+
+// =============================================================
+// 📄 DESCARGA: manual completo en PDF (portada + índice clicable)
+// Misma técnica de "ventana de impresión" que Análisis IA/Estadísticas:
+// arma un documento HTML completo y llama a window.print() — el usuario
+// elige "Guardar como PDF" en el diálogo de impresión del navegador.
+// =============================================================
+async function descargarManualPDF() {
+    construirManualContenidos();
+    const logoDataUrl = await obtenerLogoDataUrl();
+    const fechaGeneracion = new Date().toLocaleDateString('es-CL') + ' ' + new Date().toLocaleTimeString('es-CL');
+
+    let indiceHtml = '';
+    MANUAL_SECCIONES.forEach(sec => {
+        indiceHtml += `<li><a href="#manualpdf-${sec.id}">${sec.icono} ${sec.titulo}</a></li>`;
+    });
+
+    let seccionesHtml = '';
+    MANUAL_SECCIONES.forEach(sec => {
+        seccionesHtml += `<section id="manualpdf-${sec.id}" class="manualpdf-seccion">${MANUAL_CONTENIDOS[sec.id] || ''}</section>`;
+    });
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Sistema de Gestión Tabla Quirúrgica - Manual de Usuario</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+                html, body { width:100%; max-width:100%; }
+                body { font-family:'Segoe UI', Arial, sans-serif; background:white; color:#1e293b; }
+                @page { size:A4 portrait; margin:15mm; }
+                img, table { max-width:100%; }
+                h1, h2, h3 { page-break-after: avoid; }
+                table, .manualpdf-seccion > div { page-break-inside: avoid; }
+
+                .manualpdf-portada {
+                    min-height: 247mm;
+                    display:flex; flex-direction:column; align-items:center; justify-content:center;
+                    text-align:center;
+                    background:linear-gradient(135deg, #0b2a4f 0%, #1a6d8a 100%);
+                    color:white;
+                    padding:40px;
+                    page-break-after: always;
+                }
+                .manualpdf-portada img { height:90px; width:auto; background:rgba(255,255,255,0.9); padding:10px; border-radius:12px; margin-bottom:28px; }
+                .manualpdf-portada h1 { font-size:2rem; font-weight:800; margin-bottom:10px; letter-spacing:0.3px; }
+                .manualpdf-portada h2 { font-size:1.2rem; font-weight:500; opacity:0.9; margin-bottom:30px; }
+                .manualpdf-portada .sub { font-size:0.95rem; opacity:0.85; margin-bottom:6px; }
+                .manualpdf-portada .fecha { font-size:0.8rem; opacity:0.7; margin-top:40px; }
+                .manualpdf-portada .copyright { font-size:0.78rem; opacity:0.75; margin-top:6px; }
+
+                .manualpdf-indice { page-break-after: always; padding-top:10px; }
+                .manualpdf-indice h1 { font-size:1.5rem; color:#0b2a4f; margin-bottom:20px; border-bottom:2px solid #e2e8f0; padding-bottom:10px; }
+                .manualpdf-indice ol { list-style:none; padding:0; counter-reset: indice; }
+                .manualpdf-indice li { margin-bottom:12px; font-size:0.95rem; }
+                .manualpdf-indice a { color:#0b2a4f; text-decoration:none; }
+                .manualpdf-indice a:hover { text-decoration:underline; }
+
+                .manualpdf-seccion { padding-top:4px; }
+
+                .manualpdf-footer { margin-top:40px; padding-top:12px; border-top:1px solid #e2e8f0; font-size:0.7rem; color:#94a3b8; text-align:center; }
+
+                @media print {
+                    .no-print { display:none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="manualpdf-portada">
+                ${logoDataUrl ? `<img src="${logoDataUrl.dataUrl}" alt="Hospital de Illapel">` : ''}
+                <h1>Sistema de Gestión Tabla Quirúrgica</h1>
+                <h2>Manual de Usuario</h2>
+                <div class="sub">Hospital Dr. Humberto Elorza Cortés · Illapel, Chile</div>
+                <div class="fecha">Generado el ${fechaGeneracion}</div>
+                <div class="copyright">© Dr. Danilo A. Nava La C. · Jefe del Proceso Quirúrgico</div>
+            </div>
+
+            <div class="manualpdf-indice">
+                <h1>📖 Índice</h1>
+                <ol>${indiceHtml}</ol>
+            </div>
+
+            ${seccionesHtml}
+
+            <div class="manualpdf-footer">© Dr. Danilo A. Nava La C. · Sistema de Gestión Tabla Quirúrgica</div>
+        </body>
+        </html>
+    `;
+
+    const ventana = window.open('', '_blank', 'width=1000,height=800,scrollbars=yes');
+    if (ventana) {
+        ventana.document.write(html);
+        ventana.document.close();
+        ventana.focus();
+        let yaImpreso = false;
+        ventana.addEventListener('load', function() {
+            if (!yaImpreso) { yaImpreso = true; ventana.print(); }
+        });
+        setTimeout(function() {
+            if (!yaImpreso) { yaImpreso = true; ventana.print(); }
+        }, 2000);
+    } else {
+        showModal({
+            title: '⚠️ Error',
+            message: 'No se pudo abrir la ventana de impresión.<br>Verifica que los pop-ups estén habilitados.',
+            icon: '⚠️',
+            confirmText: 'Aceptar'
+        });
     }
 }
