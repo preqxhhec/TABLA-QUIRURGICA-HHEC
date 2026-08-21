@@ -640,6 +640,26 @@ document.querySelectorAll('#weekContent input[data-col="RUT"]').forEach(input =>
         });
     });
 
+    // 7️⃣ EVENTOS ESPECIALES: ESPECIALIDAD (repoblar el <select> de Cirujano
+    // de la misma fila, ya que la lista de médicos depende de la
+    // especialidad elegida — ver obtenerMedicosPorEspecialidadCache() en
+    // js/12). Al cambiar la especialidad se reinicia Cirujano a "Seleccione"
+    // porque el médico anterior puede no pertenecer a la nueva lista.
+    document.querySelectorAll('#weekContent select[data-col="Especialidad"]').forEach(select => {
+        if (select.dataset._listenerEspecialidad) return;
+        select.dataset._listenerEspecialidad = 'true';
+
+        select.addEventListener('change', function() {
+            const tr = this.closest('tr');
+            const cirujanoSelect = tr?.querySelector('select[data-col="Cirujano"]');
+            if (!cirujanoSelect) return;
+
+            const opciones = obtenerMedicosPorEspecialidadCache(this.value);
+            cirujanoSelect.innerHTML = generarOptions(['Seleccione', ...opciones], 'Seleccione');
+            cirujanoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
     console.log('✅ Eventos delegados asignados correctamente');
 }
 

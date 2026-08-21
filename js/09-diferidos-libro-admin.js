@@ -508,12 +508,24 @@
                     </div>
                 </div>
                 
-                <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; padding:16px;">
+                <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; padding:16px; margin-bottom:16px;">
                     <div style="font-size:1.1rem; font-weight:600; margin-bottom:12px;">
                         📋 Gestión de Desplegables Fijos
                     </div>
                     <div id="desplegablesLista">
                         <p style="color:#94a3b8; text-align:center; padding:20px;">Cargando opciones...</p>
+                    </div>
+                </div>
+
+                <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; padding:16px;">
+                    <div style="font-size:1.1rem; font-weight:600; margin-bottom:4px;">
+                        👨‍⚕️ Médicos por Especialidad (campo Cirujano)
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">
+                        Elige una especialidad para editar su lista de médicos.
+                    </div>
+                    <div id="medicosEspecialidadLista">
+                        <p style="color:#94a3b8; text-align:center; padding:20px;">Cargando médicos...</p>
                     </div>
                 </div>
             </div>
@@ -522,6 +534,7 @@
         await precargarDesplegables();
         cargarUsuarios();
         cargarDesplegables();
+        cargarMedicosPorEspecialidad();
 
         document.getElementById('crearUsuarioBtn')?.addEventListener('click', function() {
             mostrarModalCrearUsuario();

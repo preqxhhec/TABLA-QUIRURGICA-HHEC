@@ -46,7 +46,7 @@ const CAMPOS_A_COPIAR = [
 let desplegablesCache = {};
 
 async function cargarDesplegablesCache() {
-    const keys = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad'];
+    const keys = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad', 'Anestesista'];
     for (const key of keys) {
         try {
             const snapshot = await database.ref('desplegables/' + key).once('value');
@@ -434,7 +434,7 @@ async function cargarDatosDesdeFirebase() {
     });
 
     // ✅ SINCRONIZACIÓN DE DESPLEGABLES EN TIEMPO REAL
-    const keysDesplegables = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad'];
+    const keysDesplegables = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad', 'Anestesista'];
     keysDesplegables.forEach(key => {
         database.ref('desplegables/' + key).on('value', function(snapshot) {
             const data = snapshot.val();
@@ -450,18 +450,30 @@ async function cargarDatosDesdeFirebase() {
             console.error(`❌ Error en sincronización de ${key}:`, error);
         });
     });
+
+    // ✅ SINCRONIZACIÓN EN TIEMPO REAL DE MÉDICOS POR ESPECIALIDAD (Cirujano)
+    database.ref('desplegables/medicos_por_especialidad').on('value', function(snapshot) {
+        medicosPorEspecialidadCache = snapshot.val() || {};
+        console.log('🔄 Médicos por especialidad actualizados en tiempo real');
+        if (seccionActiva === 'registro') {
+            renderWeekView();
+        }
+    }, function(error) {
+        console.error('❌ Error en sincronización de médicos por especialidad:', error);
+    });
 }
 
     function detenerSincronizacionTiempoReal() {
     database.ref('registros_quirurgicos').off();
     database.ref('pacientes_diferidos').off();
     database.ref('registros_definitivos').off();
-    
+
     // ✅ DETENER SINCRONIZACIÓN DE DESPLEGABLES
-    const keysDesplegables = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad'];
+    const keysDesplegables = ['Jornada', 'ESTADO_DE_IQx', 'DESTINO', 'Especialidad', 'Anestesista'];
     keysDesplegables.forEach(key => {
         database.ref('desplegables/' + key).off();
     });
-    
+    database.ref('desplegables/medicos_por_especialidad').off();
+
     console.log('⏹️ Sincronización detenida');
 }

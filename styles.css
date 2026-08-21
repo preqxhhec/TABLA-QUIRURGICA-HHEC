@@ -380,21 +380,22 @@ td.col-nombre select {
 
 /* 🟦 AZUL - Celdas (hasta Condicion_LE) */
 td.col-fecha, td.col-rut, td.col-edad, td.col-ficha, td.col-nombre, td.col-destino, td.col-hora,
-td:has(input[data-col="T_Qx"]), td:has(select[data-col="Jornada"]), td:has(input[data-col="Cirujano"]),
-td:has(select[data-col="Especialidad"]), td:has(input[data-col="Anestesista"]), td:has(input[data-col="Diagnostico"]),
+td:has(input[data-col="T_Qx"]), td:has(select[data-col="Jornada"]),
+td:has(input[data-col="Diagnostico"]),
 td:has(input[data-col="Intervencion_propuesta"]), td:has(input[data-col="Condicion_LE"]) {
     background-color: #e8f4fd !important; /* Azul muy claro */
 }
 /* ❌ ELIMINADO: td.col-estado */
 
-/* 🟩 VERDE - Celdas (desde ESTADO_DE_IQx en adelante) */
+/* 🟩 VERDE - Celdas (desde ESTADO_DE_IQx en adelante, más Cirujano/Especialidad/Anestesista) */
 td.col-intervencion, td:has(input[data-col="Tipo_Actividad"]), td:has(input[data-col="Tipo_Actividad_2"]),
 td:has(input[data-col="Tipo_Actividad_3"]), td:has(textarea[data-col="1ra_Intervencion_Qx_Realizada"]),
 td:has(textarea[data-col="2da_Intervencion_Qx_Realizada"]), td:has(textarea[data-col="3ra_Intervencion_Realizada"]),
 td:has(select[data-col="Causal_de_suspension"]), td:has(select[data-col="Motivo"]),
 td:has(textarea[data-col="Observaciones"]),
 td:has(input[data-col="T_Retraso"]), td:has(input[data-col="Hora_de_entrada"]), td:has(input[data-col="Hora_de_salida"]),
-td:has(input[data-col="T_QX"]), td.col-estado, td.col-destino {
+td:has(input[data-col="T_QX"]), td.col-estado, td.col-destino,
+td:has(select[data-col="Cirujano"]), td:has(select[data-col="Especialidad"]), td:has(select[data-col="Anestesista"]) {
     background-color: #e8f5e9 !important; /* Verde muy claro */
 }
 
@@ -402,8 +403,8 @@ td:has(input[data-col="T_QX"]), td.col-estado, td.col-destino {
 td.col-fecha input, td.col-rut input, td.col-edad input, td.col-ficha input, td.col-nombre input,
 td.col-estado select, td.col-destino select,
 td:has(input[data-col="T_Qx"]) input, td:has(select[data-col="Jornada"]) select,
-td:has(input[data-col="Cirujano"]) input, td:has(select[data-col="Especialidad"]) select,
-td:has(input[data-col="Anestesista"]) input, td:has(input[data-col="Diagnostico"]) input,
+td:has(select[data-col="Cirujano"]) select, td:has(select[data-col="Especialidad"]) select,
+td:has(select[data-col="Anestesista"]) select, td:has(input[data-col="Diagnostico"]) input,
 td:has(input[data-col="Intervencion_propuesta"]) input, td:has(input[data-col="Condicion_LE"]) input,
 td.col-intervencion textarea,
 td:has(input[data-col="Tipo_Actividad"]) input, td:has(input[data-col="Tipo_Actividad_2"]) input,

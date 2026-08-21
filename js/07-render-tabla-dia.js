@@ -8,6 +8,27 @@ function esEstadoVacio(estado) {
     return val === '' || val === 'seleccione';
 }
 
+// Genera las <option> de un <select> a partir de una lista de opciones.
+// Global (no anidada en renderDayTable) porque también la usa el listener
+// de js/02 que repuebla el select de Cirujano al cambiar la Especialidad.
+function generarOptions(opciones, valorSeleccionado) {
+    return opciones.map(opt =>
+        `<option value="${opt}" ${opt === valorSeleccionado ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+}
+
+// Igual que generarOptions(), pero si el valor guardado no está en la lista
+// (por ejemplo nombres cargados como texto libre antes de que este campo
+// fuera un desplegable administrado) lo agrega igual como primera opción,
+// para no ocultar ni perder datos ya guardados.
+function generarOptionsConPreservado(opciones, valorSeleccionado) {
+    let lista = opciones;
+    if (valorSeleccionado && valorSeleccionado !== 'Seleccione' && !opciones.includes(valorSeleccionado)) {
+        lista = [valorSeleccionado, ...opciones];
+    }
+    return generarOptions(lista, valorSeleccionado);
+}
+
 async function renderDayTable(dayData, semanaIdx, diaIdx) {
     const dia = dayData.dia;
     const dayKey = `${semanaIdx}-${diaIdx}`;
@@ -32,13 +53,7 @@ async function renderDayTable(dayData, semanaIdx, diaIdx) {
     const opcionesEstado = obtenerOpcionesCache('ESTADO_DE_IQx');
     const opcionesDestino = obtenerOpcionesCache('DESTINO');
     const opcionesEspecialidad = obtenerOpcionesCache('Especialidad');
-
-    // Pre-generar opciones HTML para reutilizar
-    function generarOptions(opciones, valorSeleccionado) {
-        return opciones.map(opt =>
-            `<option value="${opt}" ${opt === valorSeleccionado ? 'selected' : ''}>${opt}</option>`
-        ).join('');
-    }
+    const opcionesAnestesista = obtenerOpcionesCache('Anestesista');
 
     // ✅ UN SOLO TABLE-WRAP PARA TODOS LOS PABELLONES
     html += `<div class="table-wrap" id="scrollContainer_${dayKey}">`;
@@ -134,7 +149,18 @@ async function renderDayTable(dayData, semanaIdx, diaIdx) {
                     inputHtml = `<select data-col="${col}" data-rowkey="${rowKey}" class="input-auto">${generarOptions(opcionesDestino, val)}</select>`;
 
                 } else if (col === 'Especialidad') {
-                    inputHtml = `<select data-col="${col}" data-rowkey="${rowKey}" class="input-auto">${generarOptions(opcionesEspecialidad, val)}</select>`;
+                    inputHtml = `<select data-col="${col}" data-rowkey="${rowKey}" class="input-auto">${generarOptionsConPreservado(opcionesEspecialidad, val)}</select>`;
+
+                } else if (col === 'Cirujano') {
+                    // Lista de médicos según la Especialidad actual de esta fila
+                    // (ver obtenerMedicosPorEspecialidadCache() en js/12). Si la
+                    // Especialidad cambia, js/02 (asignarEventosDelegados) repuebla
+                    // este mismo <select>.
+                    const opcionesCirujano = obtenerMedicosPorEspecialidadCache(fila['Especialidad']);
+                    inputHtml = `<select data-col="${col}" data-rowkey="${rowKey}" class="input-auto">${generarOptionsConPreservado(['Seleccione', ...opcionesCirujano], val)}</select>`;
+
+                } else if (col === 'Anestesista') {
+                    inputHtml = `<select data-col="${col}" data-rowkey="${rowKey}" class="input-auto">${generarOptionsConPreservado(opcionesAnestesista, val)}</select>`;
 
                 } else if (COLS_INTERVENCION.includes(col)) {
                     inputHtml = `

@@ -321,6 +321,7 @@
 
             cargarDatosDesdeFirebase();
             await cargarDesplegablesCache();
+            await cargarMedicosPorEspecialidadCache();
             iniciarSincronizacionTiempoReal();
             iniciarAutoSave();
 
