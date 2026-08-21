@@ -1238,9 +1238,11 @@ function descargarInformeTextoAnalisisIA() {
             <meta charset="UTF-8">
             <title>Informe Ejecutivo - Análisis IA</title>
             <style>
-                * { margin:0; padding:0; box-sizing:border-box; }
+                * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+                html, body { width:100%; max-width:100%; }
                 body { font-family:'Segoe UI', Arial, sans-serif; padding:30px; background:white; color:#1e293b; }
-                @page { size:portrait; margin:15mm; }
+                @page { size:A4 portrait; margin:15mm; }
+                img, table { max-width:100%; }
                 .membrete { display:flex; align-items:center; gap:20px; padding:16px 22px; background:linear-gradient(135deg, #0b2a4f 0%, #1a6d8a 100%); border-radius:10px; margin-bottom:20px; color:white; }
                 .membrete img { height:60px; width:auto; background:rgba(255,255,255,0.9); padding:4px; border-radius:6px; }
                 .membrete h1 { font-size:1.4rem; font-weight:700; }
@@ -1252,7 +1254,6 @@ function descargarInformeTextoAnalisisIA() {
                 @media print {
                     .no-print { display:none; }
                     body { padding:0; }
-                    .membrete { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
                 }
             </style>
         </head>
