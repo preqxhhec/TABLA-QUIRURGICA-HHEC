@@ -1,0 +1,17 @@
+{
+    "name": "Tabla Quirúrgica - Hospital Dr. Humberto Elorza Cortés",
+    "short_name": "Tabla Qx",
+    "description": "Sistema de registro y gestión de la Tabla Quirúrgica del Hospital Dr. Humberto Elorza Cortés, Illapel.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#0b2a4f",
+    "theme_color": "#0b2a4f",
+    "lang": "es-CL",
+    "icons": [
+        { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}
