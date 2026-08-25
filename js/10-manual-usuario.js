@@ -270,13 +270,14 @@ function construirManualContenidos() {
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (AGREGADO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía agregada realizada</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (CONDICIONAL)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía condicional realizada</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">OPERADO (PAD)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía PAD realizada</td></tr>
-                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;"><strong>SUSPENDIDO</strong></td><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;">⚠️ Cirugía suspendida (bloquea el botón Diferir)</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;"><strong>SUSPENDIDO</strong></td><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;">⚠️ Cirugía suspendida (excepción: SÍ permite Diferir/Reubicar, ver nota abajo)</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">URGENCIA</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Cirugía de urgencia</td></tr>
-                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">CONDICIONAL (NO OPERADO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Condicional no operado</td></tr>
+                    <tr><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;"><strong>CONDICIONAL (NO OPERADO)</strong></td><td style="padding:8px 12px; border:1px solid #e2e8f0; background:#fef2f2;">⚠️ Condicional no operado (excepción: SÍ permite Diferir/Reubicar, ver nota abajo)</td></tr>
                     <tr><td style="padding:8px 12px; border:1px solid #e2e8f0;">PERIANALGESIA (PARTO)</td><td style="padding:8px 12px; border:1px solid #e2e8f0;">Parto con analgesia</td></tr>
                 </tbody>
             </table>
-            <p style="color:#dc2626; font-weight:500; margin-top:8px;">⚠️ <strong>Importante:</strong> Cuando un paciente está SUSPENDIDO, el botón Diferir se deshabilita automáticamente.</p>
+            <p style="color:#dc2626; font-weight:500; margin-top:8px;">⚠️ <strong>Importante:</strong> Al elegir CUALQUIER estado en ESTADO_DE_IQx, los botones Diferir y Reubicar de esa fila se deshabilitan (solo quedan habilitados cuando el campo está vacío, "Seleccione").</p>
+            <p style="color:#dc2626; font-weight:500; margin-top:8px;">⚠️ <strong>Excepción:</strong> SUSPENDIDO y CONDICIONAL (NO OPERADO) sí permiten usar Diferir o Reubicar — el paciente permanece visible en su fila original (no desaparece), a diferencia del resto de los estados. Pero apenas se usa uno de los dos botones una vez, ambos quedan bloqueados para esa fila en particular, para evitar que el paciente termine duplicado.</p>
         `,
         
         'botones': `
@@ -609,7 +610,8 @@ function construirManualContenidos() {
                 <li><strong>Intervalo (10 minutos)</strong>: Cada 10 minutos se guarda automáticamente. Si hay filas con datos de paciente pero sin FECHA, muestra una alerta recordatorio (sin dejar de guardar)</li>
             </ol>
             <p style="color:#64748b; font-style:italic;">💡 Puedes ver los guardados automáticos en la consola del navegador (F12)</p>
-            
+            <p style="color:#475569; line-height:1.7; margin-top:8px;">Mientras tengas algo escrito sin guardar todavía, el sistema protege esa edición: ignora temporalmente los cambios que otras personas guarden en cualquier otra fila de la tabla, para que no te pisen lo que estás escribiendo. Apenas tu cambio se guarda (automático o manual), vuelve a mostrar los cambios de los demás con normalidad.</p>
+
             <h2 style="font-size:1.3rem; color:#0b2a4f; margin-top:24px; margin-bottom:12px;">8.2 Color de Filas</h2>
             <p style="color:#475569; line-height:1.7; margin-bottom:12px;">Puedes marcar filas con colores para organizar visualmente:</p>
             <ol style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:16px;">
@@ -685,9 +687,9 @@ function construirManualContenidos() {
                         <td style="padding:8px 12px; border:1px solid #e2e8f0;">Recarga la página (F5)</td>
                     </tr>
                     <tr>
-                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">El botón Diferir está deshabilitado</td>
-                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Paciente SUSPENDIDO</td>
-                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Cambia el estado para habilitarlo</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Los botones Diferir/Reubicar están deshabilitados</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">ESTADO_DE_IQx tiene un estado elegido (que no sea SUSPENDIDO o CONDICIONAL (NO OPERADO)), o esa fila ya fue diferida/reubicada antes</td>
+                        <td style="padding:8px 12px; border:1px solid #e2e8f0;">Es el comportamiento esperado (ver sección 3.2); vuelve el campo a "Seleccione" si corresponde</td>
                     </tr>
                     <tr>
                         <td style="padding:8px 12px; border:1px solid #e2e8f0;">No veo una sección en el menú (Estadísticas, Libro, etc.)</td>
@@ -738,10 +740,11 @@ location.reload();</pre>
             
             <div style="margin-bottom:20px;">
                 <h3 style="color:#0b2a4f; font-size:1.1rem; margin-bottom:6px;">❓ ¿Qué significa "SUSPENDIDO" en ESTADO_DE_IQx?</h3>
-                <p style="color:#475569; line-height:1.7;">Un paciente SUSPENDIDO es aquel cuya cirugía fue suspendida. Características:</p>
+                <p style="color:#475569; line-height:1.7;">Un paciente SUSPENDIDO es aquel cuya cirugía fue suspendida. Junto con CONDICIONAL (NO OPERADO), es una excepción a la regla general de bloqueo:</p>
                 <ul style="color:#475569; line-height:1.8; padding-left:24px; margin-bottom:8px;">
-                    <li>El botón Diferir está deshabilitado</li>
-                    <li>Si se reubica, la fila original NO se elimina</li>
+                    <li>Los botones Diferir y Reubicar SÍ quedan habilitados (a diferencia de cualquier otro estado elegido)</li>
+                    <li>Si se difiere o reubica, la fila original NO se elimina — el paciente sigue visible ahí</li>
+                    <li>Una vez usado Diferir o Reubicar en esa fila, ambos botones se bloquean para no duplicar al paciente</li>
                 </ul>
             </div>
             
