@@ -128,7 +128,11 @@ async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = tru
 
     try {
         await database.ref().update(updates);
-        
+
+        // 🛟 Guardado confirmado en Firebase: ya es seguro que el listener
+        // en tiempo real vuelva a aplicar actualizaciones remotas.
+        hayCambiosSinGuardarPendientes = false;
+
         if (mostrarModal) {
             console.log(`✅ ${filasConDatos} filas guardadas, ${filasEliminadas} eliminadas en ${DIAS[diaIdx]}`);
         } else {
@@ -263,7 +267,11 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
 
     try {
         await database.ref().update(updates);
-        
+
+        // 🛟 Guardado confirmado en Firebase: ya es seguro que el listener
+        // en tiempo real vuelva a aplicar actualizaciones remotas.
+        hayCambiosSinGuardarPendientes = false;
+
         if (mostrarModal) {
             console.log(`✅ ${filasConDatos} filas guardadas, ${filasEliminadas} eliminadas en ${pabName}`);
         } else {
@@ -306,6 +314,10 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
 // 🕒 DISPARADOR DE GUARDADO AUTOMÁTICO
 // =============================================================
 function triggerAutoSave() {
+    // 🛟 Hay un cambio sin guardar desde ahora — ver la bandera en js/01
+    // para el detalle de qué protege exactamente.
+    hayCambiosSinGuardarPendientes = true;
+
     if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
         console.log('🔄 Auto-save reiniciado (nuevo cambio detectado)');
@@ -317,9 +329,19 @@ function triggerAutoSave() {
         if (seccionActiva === 'registro' && currentUser) {
             const dayKey = `${currentWeek}-${currentDay}`;
             console.log('🕒 Ejecutando auto-save');
+            // hayCambiosSinGuardarPendientes se limpia DENTRO de
+            // guardarDiaEnFirebaseOptimizadoConModal, justo cuando el
+            // guardado en Firebase realmente termina bien — así sea que
+            // haya llegado hasta acá por el autoguardado o por el botón
+            // manual de guardar.
             guardarDiaEnFirebaseOptimizadoConModal(dayKey, false).then(() => {
                 renderWeekView(true);
             });
+        } else {
+            // El usuario cambió de sección antes de que corriera el
+            // autoguardado — no hay nada que guardar en este momento, así
+            // que no hay que seguir bloqueando el listener por esto.
+            hayCambiosSinGuardarPendientes = false;
         }
     }, DEBOUNCE_DELAY);
 }
