@@ -25,6 +25,36 @@ const ACCESOS_ADICIONALES_APP = [
     { key: 'analisisIa', label: '🧠 Análisis IA' }
 ];
 
+// 🔘 Permisos por BOTÓN dentro de una sección (no toda-o-nada como
+// SECCIONES_APP) — mismo mecanismo de siempre (usuarios/{uid}.secciones,
+// leído con usuarioTieneAccesoSeccion()), solo que la clave identifica una
+// acción puntual en vez de una sección completa. A propósito NO incluye
+// filtros (quedan siempre disponibles) ni nada que ya sea admin-only (ej.
+// Registrar Día, Editar/Eliminar en Libro) — sería un segundo candado
+// redundante sobre lo mismo. Ver renderCheckboxesPermisos().
+const ACCIONES_POR_SECCION = {
+    registro: [
+        { key: 'registro_guardar', label: '💾 Guardar (Día / Pabellón)' },
+        { key: 'registro_limpiar', label: '🗑️ Limpiar (Día / Pabellón)' },
+        { key: 'registro_agregarFila', label: '➕ Agregar Fila' },
+        { key: 'registro_imprimir', label: '🖨️ Imprimir Día' },
+        { key: 'registro_presentacionPpt', label: '🎥 Presentación / ⬇️ Descargar PPT' },
+        { key: 'registro_diferir', label: '⏩ Diferir' },
+        { key: 'registro_reubicar', label: '🔄 Reubicar' },
+        { key: 'registro_eliminarFila', label: '🗑️ Eliminar Fila' }
+    ],
+    libro: [
+        { key: 'libro_exportarExcel', label: '📊 Exportar a Excel' }
+    ],
+    diferidos: [
+        { key: 'diferidos_reintegrar', label: '↩️ Reintegrar' },
+        { key: 'diferidos_eliminar', label: '🗑️ Eliminar' }
+    ],
+    estadisticas: [
+        { key: 'estadisticas_presentacionPpt', label: '🎥 Presentación / ⬇️ Descargar PPT' }
+    ]
+};
+
 let currentUserSecciones = null;
 let currentUserSoloLecturaTabla = false;
 
@@ -128,6 +158,20 @@ function renderCheckboxesPermisos(seccionesActuales, soloLecturaActual) {
         html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
             <input type="checkbox" class="chk-permiso-seccion" data-seccion="${sec.key}" ${marcado ? 'checked' : ''}> ${sec.label}
         </label>`;
+
+        // 🔘 Botones de esta sección (si tiene) — indentados debajo, mismo
+        // mecanismo/clase que el checkbox de la sección (ver ACCIONES_POR_SECCION).
+        const acciones = ACCIONES_POR_SECCION[sec.key];
+        if (acciones && acciones.length) {
+            html += `<div style="display:flex; flex-direction:column; gap:4px; margin:2px 0 6px 26px; padding-left:10px; border-left:2px solid #e2e8f0;">`;
+            acciones.forEach(acc => {
+                const accMarcado = !seccionesActuales || seccionesActuales[acc.key] !== false;
+                html += `<label style="display:flex; align-items:center; gap:8px; font-size:0.78rem; color:#64748b; cursor:pointer;">
+                    <input type="checkbox" class="chk-permiso-seccion" data-seccion="${acc.key}" ${accMarcado ? 'checked' : ''}> ${acc.label}
+                </label>`;
+            });
+            html += `</div>`;
+        }
     });
 
     html += `</div>
