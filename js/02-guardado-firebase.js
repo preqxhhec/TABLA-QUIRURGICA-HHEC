@@ -129,9 +129,12 @@ async function guardarDiaEnFirebaseOptimizadoConModal(dayKey, mostrarModal = tru
     try {
         await database.ref().update(updates);
 
-        // 🛟 Guardado confirmado en Firebase: ya es seguro que el listener
-        // en tiempo real vuelva a aplicar actualizaciones remotas.
-        hayCambiosSinGuardarPendientes = false;
+        // 🛟 Guardado confirmado en Firebase: las filas de ESTE día ya están
+        // a salvo — el listener en tiempo real vuelve a poder actualizarlas
+        // con normalidad (las de otros días, si las hubiera, no se tocan).
+        for (const rk of [...filasConCambiosSinGuardar]) {
+            if (rk.startsWith(`${semanaIdx}-${diaIdx}-`)) filasConCambiosSinGuardar.delete(rk);
+        }
 
         if (mostrarModal) {
             console.log(`✅ ${filasConDatos} filas guardadas, ${filasEliminadas} eliminadas en ${DIAS[diaIdx]}`);
@@ -268,9 +271,13 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
     try {
         await database.ref().update(updates);
 
-        // 🛟 Guardado confirmado en Firebase: ya es seguro que el listener
-        // en tiempo real vuelva a aplicar actualizaciones remotas.
-        hayCambiosSinGuardarPendientes = false;
+        // 🛟 Guardado confirmado en Firebase: las filas de ESTE pabellón ya
+        // están a salvo — el listener en tiempo real vuelve a poder
+        // actualizarlas con normalidad (las del otro pabellón, si las
+        // hubiera, no se tocan).
+        for (const rk of [...filasConCambiosSinGuardar]) {
+            if (rk.startsWith(`${semanaIdx}-${diaIdx}-${pabIdx}-`)) filasConCambiosSinGuardar.delete(rk);
+        }
 
         if (mostrarModal) {
             console.log(`✅ ${filasConDatos} filas guardadas, ${filasEliminadas} eliminadas en ${pabName}`);
@@ -313,10 +320,11 @@ async function guardarPabellonEnFirebaseOptimizadoConModal(pabKey, mostrarModal 
 // =============================================================
 // 🕒 DISPARADOR DE GUARDADO AUTOMÁTICO
 // =============================================================
-function triggerAutoSave() {
-    // 🛟 Hay un cambio sin guardar desde ahora — ver la bandera en js/01
-    // para el detalle de qué protege exactamente.
-    hayCambiosSinGuardarPendientes = true;
+function triggerAutoSave(rowKey) {
+    // 🛟 Esta fila tiene un cambio sin guardar desde ahora — ver el Set en
+    // js/01 para el detalle de qué protege exactamente (solo esta fila, no
+    // toda la tabla).
+    if (rowKey) filasConCambiosSinGuardar.add(rowKey);
 
     if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
@@ -329,7 +337,7 @@ function triggerAutoSave() {
         if (seccionActiva === 'registro' && currentUser) {
             const dayKey = `${currentWeek}-${currentDay}`;
             console.log('🕒 Ejecutando auto-save');
-            // hayCambiosSinGuardarPendientes se limpia DENTRO de
+            // Las filas de este día se quitan del Set DENTRO de
             // guardarDiaEnFirebaseOptimizadoConModal, justo cuando el
             // guardado en Firebase realmente termina bien — así sea que
             // haya llegado hasta acá por el autoguardado o por el botón
@@ -340,8 +348,11 @@ function triggerAutoSave() {
         } else {
             // El usuario cambió de sección antes de que corriera el
             // autoguardado — no hay nada que guardar en este momento, así
-            // que no hay que seguir bloqueando el listener por esto.
-            hayCambiosSinGuardarPendientes = false;
+            // que no hay que seguir bloqueando el listener por esto. No se
+            // sabe con certeza qué filas quedaron pendientes de esta tanda
+            // en particular, así que se limpia todo el Set (mismo criterio
+            // que ya se usaba con la bandera global anterior).
+            filasConCambiosSinGuardar.clear();
         }
     }, DEBOUNCE_DELAY);
 }
@@ -403,7 +414,7 @@ function asignarEventosDelegados() {
                     }
                 }
             }
-            triggerAutoSave();
+            triggerAutoSave(rowKey);
         }
 
         input.addEventListener('input', function() {
@@ -447,7 +458,7 @@ function asignarEventosDelegados() {
                         }
                     }
                 }
-                triggerAutoSave();
+                triggerAutoSave(rowKey);
             }
         });
     });
@@ -502,7 +513,7 @@ document.querySelectorAll('#weekContent input[data-col="RUT"]').forEach(input =>
         }
 
         actualizarIconoRut(this);
-        triggerAutoSave();
+        triggerAutoSave(rowKey);
     });
 
     input.addEventListener('blur', function() {
@@ -556,7 +567,7 @@ document.querySelectorAll('#weekContent input[data-col="RUT"]').forEach(input =>
                             }
                         }
                     }
-                    triggerAutoSave();
+                    triggerAutoSave(rowKey);
                 }
             }
         });
@@ -598,7 +609,7 @@ document.querySelectorAll('#weekContent input[data-col="RUT"]').forEach(input =>
                         }
                     }
                 }
-                triggerAutoSave();
+                triggerAutoSave(rowKey);
             }
         });
 
@@ -652,7 +663,7 @@ document.querySelectorAll('#weekContent input[data-col="RUT"]').forEach(input =>
                     }
                 }
             }
-            triggerAutoSave();
+            triggerAutoSave(rowKey);
         });
 
         // También escuchar change (para cuando se selecciona del dropdown)
