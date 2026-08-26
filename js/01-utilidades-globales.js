@@ -27,6 +27,12 @@ let currentUserRol = '';
 // el resto de filas sigue sincronizándose en tiempo real con normalidad.
 let filasConCambiosSinGuardar = new Set();
 
+// 👥 Última copia conocida de edicion_en_curso/ (Firebase): docId -> { usuario,
+// ts }. La llena iniciarEscuchaEdicionEnCurso() en js/03; aplicarAvisosEdicionEnCurso()
+// (también en js/03) la usa para pintar el aviso de "otra persona está
+// editando esta fila" sobre las filas visibles en pantalla.
+let edicionEnCursoRemota = {};
+
 
 
 // =============================================================
