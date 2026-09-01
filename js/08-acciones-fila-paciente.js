@@ -339,7 +339,7 @@ function imprimirDia(dayKey) {
         const rows = day.pabs[pabName];
         if (!rows || !rows[f]) return;
 
-        const docId = getFirebaseKey(rowKey);
+        const docId = obtenerDocIdDeFila(rows[f], rowKey);
         if (docId) {
             try {
                 await database.ref('registros_quirurgicos/' + docId).remove();
@@ -412,7 +412,7 @@ function imprimirDia(dayKey) {
     const updates = {};
     for (let fIdx = 0; fIdx < rows.length; fIdx++) {
         const rowKey = `${s}-${d}-${p}-${fIdx}`;
-        const docId = getFirebaseKey(rowKey);
+        const docId = obtenerDocIdDeFila(rows[fIdx], rowKey);
         if (docId && currentUser) {
             updates[`registros_quirurgicos/${docId}`] = {
                 ...rows[fIdx],
@@ -497,7 +497,7 @@ function imprimirDia(dayKey) {
         const rows = day.pabs[pabName] || [];
         for (let fIdx = 0; fIdx < rows.length; fIdx++) {
             const rowKey = `${s}-${d}-${pIdx}-${fIdx}`;
-            const docId = getFirebaseKey(rowKey);
+            const docId = obtenerDocIdDeFila(rows[fIdx], rowKey);
             if (docId && currentUser) {
                 updates[`registros_quirurgicos/${docId}`] = {
                     ...rows[fIdx],
@@ -639,7 +639,7 @@ function imprimirDia(dayKey) {
                 fila['Ya_Reubicado'] = false;
 
                 const rowKeyOriginal = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
-                const docId = getFirebaseKey(rowKeyOriginal);
+                const docId = obtenerDocIdDeFila(fila, rowKeyOriginal);
                 if (docId) {
                     const filaVacia = {};
                     COLS.forEach(col => {
@@ -663,7 +663,7 @@ function imprimirDia(dayKey) {
                 }
             } else {
                 const rowKeyOriginal = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
-                const docId = getFirebaseKey(rowKeyOriginal);
+                const docId = obtenerDocIdDeFila(fila, rowKeyOriginal);
                 if (docId) {
                     // Se bloquean AMBOS botones (no solo Diferir): evita que
                     // el paciente termine duplicado si además se reubica esta
@@ -1015,7 +1015,7 @@ function imprimirDia(dayKey) {
 
             // Eliminar el nodo completo de Firebase
             const rowKeyOrigenClean = `${semanaIdx}-${diaIdx}-${pabIdx}-${filaIdx}`;
-            const docId = getFirebaseKey(rowKeyOrigenClean);
+            const docId = obtenerDocIdDeFila(filaOrigen, rowKeyOrigenClean);
             if (docId) {
                 await database.ref('registros_quirurgicos/' + docId).set(null);
                 console.log(`✅ Fila origen ${docId} eliminada de Firebase`);
