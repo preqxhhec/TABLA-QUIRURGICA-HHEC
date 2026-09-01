@@ -504,7 +504,7 @@ async function cargarDatosDesdeFirebase() {
 
         if (!snapshot.val()) {
             console.log('ℹ️ No hay datos en Firebase');
-            if (eliminacionesAplicadas > 0 && seccionActiva === 'registro') renderWeekView(true);
+            if (eliminacionesAplicadas > 0 && seccionEstaVisible('registro')) renderWeekView(true);
             return;
         }
         let datosActualizados = eliminacionesAplicadas;
@@ -602,7 +602,7 @@ async function cargarDatosDesdeFirebase() {
         });
         if (datosActualizados > 0) {
             console.log(`🔄 Datos actualizados en tiempo real: ${datosActualizados} filas`);
-            if (seccionActiva === 'registro') {
+            if (seccionEstaVisible('registro')) {
                 renderWeekView(true);
             }
         }
@@ -613,7 +613,7 @@ async function cargarDatosDesdeFirebase() {
     iniciarEscuchaEdicionEnCurso();
 
     database.ref('pacientes_diferidos').on('value', function(snapshot) {
-        if (seccionActiva === 'diferidos') {
+        if (seccionEstaVisible('diferidos')) {
             console.log('🔄 Actualizando lista de pacientes diferidos...');
             cargarPacientesDiferidos();
         }
@@ -622,7 +622,7 @@ async function cargarDatosDesdeFirebase() {
     });
 
     database.ref('registros_definitivos').on('value', function(snapshot) {
-        if (seccionActiva === 'libro') {
+        if (seccionEstaVisible('libro')) {
             console.log('🔄 Actualizando Libro de Quirófano...');
             cargarLibroQuirofano();
         }
@@ -639,7 +639,7 @@ async function cargarDatosDesdeFirebase() {
                 desplegablesCache[key] = data;
                 console.log(`🔄 Desplegable ${key} actualizado en tiempo real`);
                 
-                if (seccionActiva === 'registro') {
+                if (seccionEstaVisible('registro')) {
                     renderWeekView();
                 }
             }
@@ -652,7 +652,7 @@ async function cargarDatosDesdeFirebase() {
     database.ref('desplegables/medicos_por_especialidad').on('value', function(snapshot) {
         medicosPorEspecialidadCache = snapshot.val() || {};
         console.log('🔄 Médicos por especialidad actualizados en tiempo real');
-        if (seccionActiva === 'registro') {
+        if (seccionEstaVisible('registro')) {
             renderWeekView();
         }
     }, function(error) {

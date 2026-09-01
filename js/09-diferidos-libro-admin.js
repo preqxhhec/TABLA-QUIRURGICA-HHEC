@@ -18,6 +18,24 @@
 
     let seccionActiva = 'registro';
 
+    // 🪟 Vista dividida: cuando está activa, hay DOS secciones visibles a
+    // la vez (una por panel) en vez de una sola — ver montarSeccionEnPanel()
+    // en js/15. seccionEstaVisible() reemplaza los chequeos de
+    // "seccionActiva === 'x'" que decidían si convenía re-renderizar una
+    // sección al llegar datos nuevos en tiempo real: con un solo panel
+    // activo el comportamiento es idéntico a antes, pero con vista
+    // dividida ambas secciones montadas deben poder actualizarse en vivo,
+    // no solo una.
+    let vistaDivididaActiva = false;
+    let vistaDivididaSecciones = { izquierda: null, derecha: null };
+
+    function seccionEstaVisible(seccion) {
+        if (vistaDivididaActiva) {
+            return vistaDivididaSecciones.izquierda === seccion || vistaDivididaSecciones.derecha === seccion;
+        }
+        return seccionActiva === seccion;
+    }
+
     // =============================================================
     // 📋 CARGAR PACIENTES DIFERIDOS
     // =============================================================
