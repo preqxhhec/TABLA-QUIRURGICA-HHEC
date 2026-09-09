@@ -125,6 +125,9 @@
     <button class="menu-item" data-section="libro" id="navLibro">
         📘 Libro de Quirófano
     </button>
+    <button class="menu-item" data-section="oftalmologia" id="navOftalmologia">
+        👁️ Tabla Oftalmología
+    </button>
     <button class="menu-item" data-section="estadisticas" id="navEstadisticas">
         📊 Estadísticas
     </button>
@@ -212,6 +215,9 @@
             <!-- La tabla se renderizará aquí -->
         </div>
     </div>
+
+    <!-- Contenido de Tabla Oftalmología (inicialmente oculto) -->
+    <div id="oftalmologiaContent" style="display: none;"></div>
 
     <!-- Contenido de Estadísticas (inicialmente oculto) -->
     <div id="estadisticasContent" style="display: none;"></div>
@@ -328,6 +334,7 @@
 <script src="js/21-reunion-tabla.js"></script>
 <script src="js/22-analisis-ia.js"></script>
 <script src="js/23-generador-ppt-combinado.js"></script>
+<script src="js/24-oftalmologia-tabla.js"></script>
 
 <!-- 📱 Registro del Service Worker (requisito para "Instalar" como app) -->
 <script>
