@@ -296,9 +296,16 @@ async function renderWeekView(esAutoSave = false) {
             const motivoSelect = tr.querySelector('.motivo-select');
 
             const esSuspendido = estado === 'SUSPENDIDO' || estado === 'CONDICIONAL (NO OPERADO)';
-            // ✅ Diferir y Reubicar se bloquean con CUALQUIER estado seleccionado,
-            // solo se habilitan cuando ESTADO_DE_IQx está vacío ("Seleccione")
-            const estadoSeleccionado = !esEstadoVacioLocal(estado);
+            // ✅ Mismas reglas que renderDayTable() (js/07): como el guardado
+            // automático ya no re-dibuja la tabla, lo que se ve tras cambiar
+            // el estado tiene que quedar idéntico a un render completo.
+            // Diferir/Reubicar: bloqueados con cualquier estado, salvo
+            // SUSPENDIDO/CONDICIONAL (NO OPERADO), que los permiten mientras
+            // la fila no se haya diferido ni reubicado ya.
+            const [sF, dF, pF, fF] = (rowKey || '').split('-').map(Number);
+            const filaEstado = semanas[sF]?.[dF]?.pabs[PABS[pF]]?.[fF] || {};
+            const yaUsado = !!(filaEstado['Ya_Diferido'] || filaEstado['Ya_Reubicado']);
+            const estadoSeleccionado = esSuspendido ? yaUsado : !esEstadoVacioLocal(estado);
 
             // Bloquear / desbloquear botones Diferir y Reubicar al instante
             const btnDiferir = tr.querySelector('.btn-diferir');
@@ -323,7 +330,9 @@ async function renderWeekView(esAutoSave = false) {
             });
 
             if (causalSelect) {
-                causalSelect.disabled = !esSuspendido;
+                // Causal solo se habilita con SUSPENDIDO (igual que js/07).
+                causalSelect.disabled = estado !== 'SUSPENDIDO';
+                if (motivoSelect && estado !== 'SUSPENDIDO') motivoSelect.disabled = true;
                 if (!esSuspendido) {
                     causalSelect.value = '';
                     if (motivoSelect) {
